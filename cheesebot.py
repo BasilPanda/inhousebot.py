@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 
+import csv
+import datetime
+
 description = '''This bot has several command functions.'''
 client = commands.Bot(command_prefix='$', description=description)
 
@@ -18,19 +21,33 @@ async def on_ready():
 # Create a text file version
 @client.command(pass_context=True,
                 name='register',
-                description="Registers a player into the MMR system.")
-async def register(ctx):
-    file = open("data.txt", "w+")
-    file_s = file.read()
+                description="Registers a player into the inhouse system.")
+async def register(ctx, *args):
 
-    if str(ctx.message.author.id) in file_s:
-        await client.say('You registered already ' + ctx.message.author.mention + "!")
+    if not check_database(ctx):
+        with open('database.csv', 'a', newline='') as csvfile:
+            filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            ign = " ".join(args)
+
+            # Row setup as DATE,ID,ELO,IGN,WINS,LOSSES,STREAK
+            currentTime = datetime.datetime.now()
+            strTime = str(currentTime.month) + "-" + str(currentTime.day) + "-" + str(currentTime.year)
+            filewriter.writerow([strTime, ctx.message.author.id, str(500), ign, '0', '0', '0'])
+        await client.say('Registration complete ' + ctx.message.author.mention + "!")
+        return
     else:
-        # Add to text file
-        file.write(str(ctx.message.author.id)+","+"0")
-        await client.say('Registration complete!')
-    file.close()
+        await client.say('You registered already ' + ctx.message.author.mention + "!")
     return
+
+
+def check_database(ctx):
+    with open('database.csv', 'r') as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            for field in row:
+                if ctx.message.author.id == field:
+                    return True
+        return False
 
 
 client.run(TOKEN)
