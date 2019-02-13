@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from Player import Player
 
 import csv
 import datetime
@@ -8,6 +9,12 @@ description = '''This bot has several command functions.'''
 client = commands.Bot(command_prefix='$', description=description)
 
 TOKEN = 'NTQyMTk4MTg4OTMzNjQ0Mjk4.DzrDPw.Ajg5xYwTGg5dvI7rs7Um0JFoEQE'
+
+lobby1 = []
+lobby2 = []
+lobby3 = []
+lobby4 = []
+in_queue = 0
 
 
 @client.event
@@ -23,7 +30,6 @@ async def on_ready():
                 name='register',
                 description="Registers a player into the inhouse system.")
 async def register(ctx, *args):
-
     if not check_database(ctx):
         with open('database.csv', 'a', newline='') as csvfile:
             filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -40,14 +46,44 @@ async def register(ctx, *args):
     return
 
 
+# Enter the queue
+@client.command(pass_context=True,
+                name='queue',
+                aliases=['join'])
+async def queue(ctx):
+    if check_database(ctx):
+        await client.say('You are not registered yet! Use $register ign to become join inhouses!')
+    else:
+        p = Player()
+        if len(lobby1) < 10:
+            lobby1.append()
+    return
+
+
 def check_database(ctx):
     with open('database.csv', 'r') as f:
         reader = csv.reader(f, delimiter=',')
         for row in reader:
-            for field in row:
-                if ctx.message.author.id == field:
-                    return True
+            if ctx.message.author.id == row[1]:
+                return True
         return False
+
+
+def get_player(ctx):
+    p = Player()
+    with open('database.csv', 'r') as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            if ctx.message.author.id == row[1]:
+                p.date = row[0]
+                p.id = row[1]
+                p.elo = row[2]
+                p.ign = row[3]
+                p.wins = row[4]
+                p.losses = row[5]
+                p.streak = row[6]
+                break
+    return p
 
 
 client.run(TOKEN)

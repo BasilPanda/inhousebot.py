@@ -9,4 +9,8 @@ class Player:
         self.losses = losses
         self.streak = streak
 
-
+    def eloChange(self, enemy_avg, team_avg, cond):
+        if cond:
+            self.elo += (abs(enemy_avg - team_avg))
+        else:
+            self.elo -= (abs(enemy_avg - team_avg))
