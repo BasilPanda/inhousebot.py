@@ -53,11 +53,27 @@ async def register(ctx, *args):
                 aliases=['join'])
 async def queue(ctx):
     if check_database(ctx):
-        await client.say('You are not registered yet! Use $register ign to become join inhouses!')
+        await client.say('You are not registered yet! Use $register "ign" to become join inhouses!')
     else:
-        p = Player()
+        p = get_player(ctx)
         if len(lobby1) < 10:
-            lobby1.append()
+            lobby1.append(p)
+        elif len(lobby2) < 10:
+            lobby2.append(p)
+        elif len(lobby3) < 10:
+            lobby3.append(p)
+        elif len(lobby4) < 10:
+            lobby4.append(p)
+        else:
+            await client.say("All lobbies currently filled! Please wait!")
+        if len(lobby1) == 10:
+            start_lobby(lobby1)
+        if len(lobby2) == 10:
+            start_lobby(lobby2)
+        if len(lobby3) == 10:
+            start_lobby(lobby3)
+        if len(lobby4) == 10:
+            start_lobby(lobby4)
     return
 
 
@@ -85,6 +101,10 @@ def get_player(ctx):
                 p.streak = row[6]
                 break
     return p
+
+
+def start_lobby(lobby):
+    return
 
 
 client.run(TOKEN)
