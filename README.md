@@ -18,8 +18,6 @@ The project is a stand-alone project. I plan on creating the bot from the ground
 
 The software development process will be similar to the agile development process. Our plan will reflect this as we will iteratively develop and test the code for each goal/milestone as a cohesive team.
 Here are the goals and milestones listed:
-- Logging System
-- Local database (txt file)
 - Online database
 - Registration
 - Leaderboards/Ranking
@@ -28,36 +26,11 @@ Here are the goals and milestones listed:
 - Lobby system
 - Report matches
 
-## Background
-
-https://github.com/BasilPanda/inhousebot.py
-
-## Required Resources
-
-- Group members
-- Hardware and software resource required
-
-## Feedback, Expectations and Competencies & Work Plan
-
-### Ewing
-
-I expect to fully finish project functionality, all bot interactions and matchmaking, by the end of Spring Semester. I have previous experience with Python. learning new APIs, asynchronous programming, Git/Github, testing, debugging  and object oriented design of which are all related to the project. What I would like to do in the coming weeks, but not in immediate consideration, is make an online database for the bot to connect to and display Leaderboards of the ranking system in a clean UI.
-
-### Devang
-
-Ensure that the backend of the program is fully set-up and functioning regarding storing data of users, match history, ranking, etc amd allow users to interact with database through commands utilizing the Discord API. I am familiar with using Python though I haven't done much database/asynchronous programming using the language so adapting my prior knowledge to Python by researching libraries/tools will be a focus. As a end goal, being able to generalize the application to setup any sort of PvP match regardless of genre would ideal and make the program more accessible to a larger audience. 
-
-### Nasir
-
-I will work directly with the league of legends api and creating a matchmaking algorithm. I have background experience with the game league of legends and their ranking system so I will be using the api key to get information about certain users statistics, matchmaking history, most played characters etc. I will be using those data points to create a suggestion system for different potential team setups for inhouse games and possibly predictive analytics in the future.
-
-### Nico
-
-I will be researching the Discord API to figure out how to most efficiently hook our bot into the server.  I'd like to read into the full documentation to see what can be reasonably achieved with our project.  This is my main task at hand as I'd like to build upon the foundational knowledge of how to both use and manipulate the Discord API before progressing onto other, more involved tasks.  I have some background experience with Python but not nearly as much as I'd like and I think this program will help to hone in on the intricacies of the language.  My goal is to make the bot as functional as possible, utilizing the resources it has at its disposal such as the user database and LoL statistics, perhaps even a website frontend to display the user database and stats.
-
-
 ## Required Dependencies
 
 
 python -m pip install discord
 
+## Other Information
+
+Most of the work done on this project was done in a private repo with two other members as a final project.
