@@ -1,21 +1,29 @@
 import discord
-import logging
-import queue
+import datetime
+import math
+import requests
+import json
+import config
+import sys
 from discord.ext import commands
 from Player import Player
-
-import csv
+from database import Database as db
 import datetime
-import config
 
-logging.basicConfig(filename='log.log',
-                    format='%(asctime)s :: %(message)s',
-                    level=logging.INFO)
-
-description = '''This bot has several command functions.'''
+description = '''Inhouse Bot Help Manual:'''
 client = commands.Bot(command_prefix='$', description=description)
-
+client.remove_command('help')
+db_connection = db.init_database()
 TOKEN = config.bot_token
+API_KEY = config.bot_token
+
+startup_extensions = ["test_cmds", "user", "admin", "captain"]
+
+#   CONSTANTS
+INIT_WINS = 0
+INIT_LOSS = 0
+INIT_STREAK = 0
+INIT_ELO = 1500
 
 # four global lobbies
 lobby1 = []
@@ -32,7 +40,11 @@ lob3_r = []
 lob4_b = []
 lob4_r = []
 # waiting queue
-in_queue = queue.Queue(maxsize=0)
+in_queue = []
+test_queue = []
+# lists
+lose_arr = ["lose", "loss", "l"]
+win_arr = ["win", "won", "w"]
 
 
 @client.event
@@ -42,134 +54,77 @@ async def on_ready():
     print(client.user.id)
     print('\n')
 
-
-# Create a text file version
-@client.command(pass_context=True,
-                name='register',
-                description="Registers a player into the inhouse system.")
-async def register(ctx, *args):
-    if not check_database(ctx):
-        with open('database.csv', 'a', newline='') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            ign = " ".join(args)
-            if not ign:
-                await client.say('Please enter your League IGN after the $register command!')
-                return
-            # Row setup as DATE,ID,ELO,IGN,WINS,LOSSES,STREAK
-            currentTime = datetime.datetime.now()
-            strTime = str(currentTime.month) + "-" + str(currentTime.day) + "-" + str(currentTime.year)
-            logging.info("Inserting into DB... Date: " + strTime + " ID: " + ctx.message.author.id +
-                          " ELO: " + str(500) + " IGN: " + ign + " WINS: 0 LOSSES: 0 STREAK: 0")
-            filewriter.writerow([strTime, ctx.message.author.id, str(500), ign, '0', '0', '0'])
-        logging.info("Bot sent msg: Registration complete " + ctx.message.author.mention + "!")
-        await client.say('Registration complete ' + ctx.message.author.mention + "!")
-        return
-    else:
-        logging.info("Bot sent msg: You registered already " + ctx.message.author.mention + "!")
-        await client.say('You registered already ' + ctx.message.author.mention + "!")
-    return
+    # To check current API
+    r = requests.get(
+        "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/Riot Phreak?api_key="
+        + config.lol_token)
+    response_json = r.json()
+    # print(response_json)
+    if 'status' in response_json:
+        if 'Forbidden' in response_json['status']['message']:
+            print("Please update League API key!")
+            sys.exit(-1)
 
 
-# Enter the queue
-@client.command(pass_context=True,
-                name='queue',
-                aliases=['join'])
-async def queue(ctx):
-    if not check_database(ctx):
-        await client.say('You are not registered yet! Use $register ign to become join inhouses!')
-    else:
-        if in_queue.qsize() >= 10:
-            if not lobby1:  # remember to change
-                start_lobby_auto(lobby1)
-            elif not lobby2:
-                start_lobby_auto(lobby2)
-            elif not lobby3:
-                start_lobby_auto(lobby3)
-            elif not lobby4:
-                start_lobby_auto(lobby4)
-            else:
-                in_queue.put(get_player(ctx))
-                await client.say("All lobbies currently filled! Please wait!")
-        else:
-            in_queue.put(get_player(ctx))
-        await client.say("Players Queued: " + str(in_queue.qsize()))
+# Checks to see if user sending command is a captain
+def is_captain(user_id):
+    # assuming lobbies are already sorted
+    if len(lobby1) > 0:
+        for player in lobby1:
+            # if the ID is a match and that match is either the 1st or 2nd player in an ELO-sorted lobby
+            if str(player.id) == user_id and (lobby1.index(player) == 0 or lobby1.index(player) == 1):
+                return 1
+    elif len(lobby2) > 0:
+        for player in lobby2:
+            if str(player.id) == user_id and (lobby2.index(player) == 0 or lobby2.index(player) == 1):
+                return 2
+    elif len(lobby3) > 0:
+        for player in lobby3:
+            if str(player.id) == user_id and (lobby3.index(player) == 0 or lobby3.index(player) == 1):
+                return 3
+    elif len(lobby4) > 0:
+        for player in lobby4:
+            if str(player.id) == user_id and (lobby4.index(player) == 0 or lobby4.index(player) == 1):
+                return 4
+    return 0
 
 
-def check_database(ctx):
-    with open('database.csv', 'r') as f:
-        logging.info("Checking database for: " + ctx.message.author.id)
-        reader = csv.reader(f, delimiter=',')
-        for row in reader:
-            if ctx.message.author.id == row[1]:
-                logging.info(ctx.message.author.id + " exists in the DB.")
-                return True
-        logging.info(ctx.message.author.id + " does not exist in the DB.")
-        return False
+# Create provider ID
+def create_provider_id(region, callback_url):
+    url = 'https://americas.api.riotgames.com/lol/tournament-stub/v4/providers?api_key=' + config.lol_token
+    data = {"region": region, "url": callback_url}
+    postRequest = requests.post(url, data=json.dumps(data), verify=True)
+    postJson = postRequest.json()
+    return postJson
 
 
-def get_player(ctx):
-    logging.info("Getting player...")
-    with open('database.csv', 'r') as f:
-        reader = csv.reader(f, delimiter=',')
-        for row in reader:
-            if ctx.message.author.id == row[1]:
-                p = Player(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
-                return p
-    logging.info("Player information retrieved.")
+# Create tournament ID
+def create_tournament_id(name, provider_id):
+    url = 'https://americas.api.riotgames.com/lol/tournament-stub/v4/tournaments?api_key=' + config.lol_token
+    data = {"name": name, "providerId": provider_id}
+    postRequest = requests.post(url, data=json.dumps(data), verify=True)
+    postJson = postRequest.json()
+    tourn = create_tournament_game(postJson)
+    return tourn
 
 
-# This just sorts the players in lobby by elo and alternates in placing them in the teams.
-# Highest player gets put on blue team. Next highest red team. Next highest blue and so on.
-def start_lobby_auto(lobby):
-    for x in range(10):
-        lobby.append(in_queue.get())
-    lobby.sort(key=lambda x: x.elo, reverse=True)
-    for x in range(5):
-        lob1_r.append(lobby[x * 2])
-        lob1_b.append(lobby[x * 2 + 1])
+def create_tournament_game(tournament_id):
+    count = 10
+    url = 'https://americas.api.riotgames.com/lol/tournament-stub/v4/codes?count=' + count + '&tournamentId=' + tournament_id + '&api_key=' + config.lol_token
+    data = {"mapType": "SUMMONERS_RIFT", "pickType": "DRAFT_MODE", "spectatorType": "ALL", "teamSize": 5}
+    headers = {'content-type': 'application/json'}
+    postRequest = requests.post(url, data=json.dumps(data), verify=True)
+    # contains list of the tournament IDs
+    postJson = postRequest.json()
+    return postJson
 
 
-# Attempt to do captain pick order
-def start_lobby_cap(lobby):
-    for x in range(10):
-        lobby.append(in_queue.get())
-    lobby.sort(key=lambda x: x.elo, reverse=True)
-    temp = lobby
-    lob1_r.append(temp[0])
-    lob1_b.append(temp[1])
-    temp.pop(0)
-    temp.pop(1)
-
-    async def _wait(future, check):
-        @client.listen()
-        async def on_message(msg):
-            counter = 0
-            if counter % 2 == 0:
-                if msg.author.id == lob1_r[0].id:
-                    p = check_if_on_team(msg)
-                    if p:
-                        lob1_r.append(p)
-                        temp.remove(p)
-                        counter += 1
-                    else:
-                        await client.say(msg + " doesn't exist in this lobby!")
-            else:
-                if msg.author.id == lob1_b[0].id:
-                    p = check_if_on_team(msg)
-                    if p:
-                        lob1_b.append(p)
-                        temp.remove(p)
-                        counter += 1
-                    else:
-                        await client.say(msg + " doesn't exist in this lobby!")
-
-
-def check_if_on_team(msg, temp):
-    for x in temp:
-        if msg == x.ign:
-            return x
-    return False
-
-
-client.run(TOKEN)
+if __name__ == "__main__":
+    for extension in startup_extensions:
+        try:
+            client.load_extension(extension)
+        except Exception as e:
+            exc = '{}: {}'.format(type(e).__name__, e)
+            print('Failed to load extension {}\n{}'.format(extension, exc))
+    client.run(TOKEN)
 
