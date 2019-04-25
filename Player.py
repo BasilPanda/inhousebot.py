@@ -9,3 +9,6 @@ class Player:
         self.losses = losses
         self.streak = streak
 
+    def to_list(self):
+        tolist = [self.date, self.id, self.elo, self.ign, self.wins, self.losses, self.streak]
+        return tolist

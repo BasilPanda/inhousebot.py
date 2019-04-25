@@ -188,7 +188,6 @@ def adjust_teams(win_t, lose_t, match_id):
 # This calculates elo change
 def elo_change(player, enemy_avg, score, match_id):
     expected = 1 / (1 + 10 ** ((enemy_avg - player.elo)/120))
-    change = 0
     # Loss
     if score == 0:
         change = math.floor(30 * (0 - expected))

@@ -34,7 +34,7 @@ class Database:
         # setup league match history tables
         c.execute(''' CREATE TABLE IF NOT EXISTS league_match (match_id INTEGER primary key, date_played DATE)''')
 
-        c.execute(''' CREATE TABLE IF NOT EXISTS league_info (match_id int non null references matches(match_id),
+        c.execute(''' CREATE TABLE IF NOT EXISTS league_info (match_id int non null references league_match(match_id),
         discord_id int not null references users(discord_id), elo_change int non null, primary key (discord_id, match_id))''')
 
         c.close()

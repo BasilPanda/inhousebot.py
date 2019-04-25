@@ -53,7 +53,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('\n')
-    await client.change_presence(game=discord.Game(name='TEMPLE INHOUSES'))
+    await client.change_presence(activity=discord.Game(name='TEMPLE INHOUSES'))
     # To check current API
     r = requests.get(
         "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/Riot Phreak?api_key="
@@ -72,19 +72,19 @@ def is_captain(user_id):
     if len(lobby1) > 0:
         for player in lobby1:
             # if the ID is a match and that match is either the 1st or 2nd player in an ELO-sorted lobby
-            if str(player.id) == user_id and (lobby1.index(player) == 0 or lobby1.index(player) == 1):
+            if player.id == user_id and (lobby1.index(player) == 0 or lobby1.index(player) == 1):
                 return 1
     elif len(lobby2) > 0:
         for player in lobby2:
-            if str(player.id) == user_id and (lobby2.index(player) == 0 or lobby2.index(player) == 1):
+            if player.id == user_id and (lobby2.index(player) == 0 or lobby2.index(player) == 1):
                 return 2
     elif len(lobby3) > 0:
         for player in lobby3:
-            if str(player.id) == user_id and (lobby3.index(player) == 0 or lobby3.index(player) == 1):
+            if player.id == user_id and (lobby3.index(player) == 0 or lobby3.index(player) == 1):
                 return 3
     elif len(lobby4) > 0:
         for player in lobby4:
-            if str(player.id) == user_id and (lobby4.index(player) == 0 or lobby4.index(player) == 1):
+            if player.id == user_id and (lobby4.index(player) == 0 or lobby4.index(player) == 1):
                 return 4
     return 0
 

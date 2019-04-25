@@ -3,7 +3,7 @@ from inhousebot import *
 
 
 # All admin related commands go here
-class Admin:
+class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -12,30 +12,24 @@ class Admin:
                       help="Remove specified player from your lobby.",
                       name='remove')
     async def remove_player(self, ctx):
-        await self.bot.delete_message(ctx.message)
+        await ctx.message.delete()
         if ctx.message.author.id not in config.admins:
-            msg = await self.bot.say(ctx.message.author.mention + ", you're not an admin!")
-            await asyncio.sleep(3)
-            await self.bot.delete_message(msg)
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=3)
             return
 
         if len(ctx.message.mentions) != 1:
-            msg = await self.bot.say(ctx.message.author.mention + ", you need to @ the user you wish to remove from "
-                                                                  "queue!")
-            await asyncio.sleep(3)
-            await self.bot.delete_message(msg)
+            await ctx.send(ctx.message.author.mention + ", you need to @ the user you wish to remove from "
+                                                        "queue!", delete_after=3)
             return
         else:
             for p in in_queue:
-                if str(p.id) == ctx.message.mentions[0].id:
+                if p.id == ctx.message.mentions[0].id:
                     in_queue.remove(p)
-                    await self.bot.say(ctx.message.author.mention + ", you have removed " +
-                                       ctx.message.mentions[0].mention + " from the queue.")
-                    await self.bot.say("Players Queued: " + str(len(in_queue)))
+                    await ctx.send(ctx.message.author.mention + ", you have removed " +
+                                   ctx.message.mentions[0].mention + " from the queue.")
+                    await ctx.send("Players Queued: " + str(len(in_queue)))
                     return
-        msg = await self.bot.say(ctx.message.author.mention + ", the player is currently not in queue...")
-        await asyncio.sleep(3)
-        await self.bot.delete_message(msg)
+        await ctx.send(ctx.message.author.mention + ", the player is currently not in queue...", delete_after=3)
         return
 
     # Admin end a lobby
@@ -43,23 +37,18 @@ class Admin:
                       help="End the current lobby.",
                       name='forceend')
     async def force_end(self, ctx):
-        await self.bot.delete_message(ctx.message)
+        await ctx.message.delete()
         if ctx.message.author.id not in config.admins:
-            msg = await self.bot.say(ctx.message.author.mention + ", you're not an admin!")
-            await asyncio.sleep(3)
-            await self.bot.delete_message(msg)
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=3)
             return
         try:
             command, lobby_num = ctx.message.content.split(" ", 1)
         except ValueError:
-            msg = await self.bot.say("Need a number argument!")
-            await asyncio.sleep(3)
-            await self.bot.delete_message(msg)
+            await ctx.send("Need a number argument!", delete_after=3)
             return
         if not 0 < int(lobby_num) < 5:
-            msg = await self.bot.say("There's only 4 numbered lobbies!")
-            await asyncio.sleep(3)
-            await self.bot.delete_message(msg)
+            await ctx.send("There's only 4 numbered lobbies!", delete_after=3)
+            return
         if lobby_num == 1:
             lobby1.clear()
             lob1_b.clear()
@@ -76,31 +65,31 @@ class Admin:
             lobby4.clear()
             lob4_b.clear()
             lob4_r.clear()
-        await self.bot.say("Lobby " + lobby_num + " cleared!")
+        await ctx.send("Lobby " + lobby_num + " cleared!")
         return
 
     # Admin update elo
     @commands.command(pass_context=True,
-                      help="Change elo for a user. ADMIN only.",
+                      help="Change elo for a user.",
                       name='elo')
     async def force_elo(self, ctx):
         if ctx.message.author.id not in config.admins:
-            await self.bot.say(ctx.message.author.mention + ", you're not an admin!")
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!")
             return
         try:
             command, mention, elo = ctx.message.content.split(" ", 2)
         except ValueError:
-            await self.bot.say("Need a mention and number argument!")
+            await ctx.send("Need a mention and number argument!")
             return
         if len(ctx.message.mentions) == 1:
             if db.check_user(db_connection, ctx.message.mentions[0].id):
                 p = db.get_player(db_connection, ctx.message.mentions[0].id)
                 p.elo = int(elo)
                 db.update_elo(db_connection, ctx.message.mentions[0].id, p.elo)
-                await self.bot.say("Elo updated!")
+                await ctx.send("Elo updated!")
                 return
             else:
-                await self.bot.say("User doesn't exist in database!")
+                await ctx.send("User doesn't exist in database!")
                 return
 
 
