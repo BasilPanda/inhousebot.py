@@ -43,10 +43,10 @@ def lobby_embed(team1, team2):
     embed = discord.Embed(title="Match Created!", colour=discord.Colour(0xffffff),
                           description="Captains are responsible for making lobbies and inviting everyone!",
                           timestamp=datetime.datetime.today())
-    embed.add_field(name="Team 1 AVG ELO: " + str(math.floor(calc_avg_elo(team2))),
+    embed.add_field(name="Team 1 AVG ELO: " + str(math.floor(calc_avg_elo(team1))),
                     value=''.join(t1_names),
                     inline=True)
-    embed.add_field(name="Team 2 AVG ELO: " + str(math.floor(calc_avg_elo(team1))),
+    embed.add_field(name="Team 2 AVG ELO: " + str(math.floor(calc_avg_elo(team2))),
                     value=''.join(t2_names),
                     inline=True)
     embed.add_field(name="OP.GG LINKS", value="[TEAM 1 OP.GG](https://na.op.gg/multi/query=" + ''.join(t1_opgg) +

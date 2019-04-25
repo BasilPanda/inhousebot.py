@@ -9,7 +9,7 @@ class Admin(commands.Cog):
 
     # removes player from the queue
     @commands.command(pass_context=True,
-                      help="Remove specified player from your lobby.",
+                      help="Remove specified player from queue.",
                       name='remove')
     async def remove_player(self, ctx):
         await ctx.message.delete()

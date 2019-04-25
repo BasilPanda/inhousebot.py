@@ -235,7 +235,24 @@ class User(commands.Cog):
     @commands.command(pass_context=True,
                       help="Shows this help menu!")
     async def help(self, ctx, *args: str):
-        return await commands.bot._default_help_command(ctx, *args)
+        help_msg = "```\nInhouse Bot Help Manual:\n" \
+                   "Admin:\n" \
+                   "    elo       Change elo for a user.\n" \
+                   "    forceend  End the current lobby.\n" \
+                   "    remove    Remove specified player from your lobby.\n" \
+                   "Captain:\n" \
+                   "    report    Report match results. Must be a captain of a team.\n" \
+                   "User:\n" \
+                   "    dequeue   Leaves the inhouse queue\n" \
+                   "    match     Reports matches stored in database\n" \
+                   "    opgg      Generates an op.gg link of the ign. Allows only one ign.\n" \
+                   "    queue     Queues up for an inhouse game\n" \
+                   "    rank      Prints the top 20 players in the community.\n" \
+                   "    register  Syncs your League account with our database\n" \
+                   "    stats     Prints out the player stats.\n" \
+                   "    updateign Updates your ign!\n" \
+                   "    help      Shows this message```"
+        return await ctx.send(help_msg)
 
     # Print the inhouse leaderboard
     @commands.command(pass_context=True,

@@ -9,7 +9,8 @@ class Test(commands.Cog):
     @commands.command(pass_context=True,
                       name='testdq',
                       help="Leaves the test queue",
-                      aliases=['tdq'])
+                      aliases=['tdq'],
+                      hidden=True)
     async def dequeue_test(self, ctx):
         for x in test_queue:
             if x.id == ctx.message.author.id:
@@ -23,7 +24,8 @@ class Test(commands.Cog):
     @commands.command(pass_context=True,
                       name='testqueue',
                       help="Enter the test queue",
-                      aliases=['tq'])
+                      aliases=['tq'],
+                      hidden=True)
     async def queue_test(self, ctx):
         # check if user is in queue first
         for x in test_queue:
