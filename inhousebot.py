@@ -53,7 +53,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('\n')
-
+    await client.change_presence(game=discord.Game(name='TEMPLE INHOUSES'))
     # To check current API
     r = requests.get(
         "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/Riot Phreak?api_key="

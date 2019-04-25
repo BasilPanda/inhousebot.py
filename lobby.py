@@ -41,7 +41,7 @@ def lobby_embed(team1, team2):
         t2_names.append(p.ign + "\n")
         t2_opgg.append("".join(p.ign.split()) + "%2C")
     embed = discord.Embed(title="Match Created!", colour=discord.Colour(0xffffff),
-                          description="Match generated! Captains are responsible for making lobbies and inviting everyone!",
+                          description="Captains are responsible for making lobbies and inviting everyone!",
                           timestamp=datetime.datetime.today())
     embed.add_field(name="Team 1 AVG ELO: " + str(math.floor(calc_avg_elo(team2))),
                     value=''.join(t1_names),
@@ -111,14 +111,19 @@ def leaderboard_embed(players):
     # turn SQL object into iterable list, sorted by ELO
     charts = list(players)
     charts.sort(key=lambda x: x[2], reverse=False)
-
+    x = 0
     # iterate through that list
     for i in range(len(charts)):
         player = charts.pop()
         desc_string += str(i + 1) + ". " + str(player[3])
-        for j in range(0, 20 - len(str(player[3]))):
+        if i > 8:
+            x = 1
+        for j in range(0, 20 - x - len(str(player[3]))):
             desc_string += " "
-        desc_string += str(player[2]) + " " + str(player[4]) + "  " + str(player[5]) + "\n"
+        space = " "
+        if len(str(player[4])) == 2:
+            space = ""
+        desc_string += str(player[2]) + " " + str(player[4]) + space + str(player[5]) + "\n"
         if i == 20:
             break
 
@@ -182,7 +187,7 @@ def adjust_teams(win_t, lose_t, match_id):
 
 # This calculates elo change
 def elo_change(player, enemy_avg, score, match_id):
-    expected = 1 / (1 + 10 ** ((enemy_avg - player.elo)/140))
+    expected = 1 / (1 + 10 ** ((enemy_avg - player.elo)/120))
     change = 0
     # Loss
     if score == 0:
@@ -204,3 +209,20 @@ def elo_change(player, enemy_avg, score, match_id):
             player.streak = player.streak + 1
     db.update_match_history(db_connection, player.id, match_id, change)
     return change
+
+
+# This checks to see if the player is in a lobby already
+def check_lobbies(player):
+    if lobby1:
+        if player in lobby1:
+            return True
+    elif lobby2:
+        if player in lobby2:
+            return True
+    elif lobby3:
+        if player in lobby3:
+            return True
+    elif lobby4:
+        if player in lobby4:
+            return True
+    return False

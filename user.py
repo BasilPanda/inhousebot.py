@@ -152,33 +152,39 @@ class User:
             if str(x.id) == ctx.message.author.id:
                 await self.bot.say(ctx.message.author.mention + " you're already in queue!")
                 return
+        # Checks to see if user is in a lobby
 
         if not db.check_user(db_connection, ctx.message.author.id):
             await self.bot.say(
-                ctx.message.author.mention + ' you are not registered yet!\nUse $register <your ign> to join the inhouse system!')
+                ctx.message.author.mention + 'you are not registered yet! Use $register <your ign> to join the '
+                                             'inhouse system!')
         else:
+            p = db.get_player(db_connection, ctx.message.author.id)
+            if check_lobbies(p):
+                await self.bot.say(ctx.message.author.mention + " you're already in a lobby!")
+                return
             if len(in_queue) >= 9:
                 if not lobby1:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby1, lob1_b, lob1_r)
                     await self.bot.say(embed=embed)
                 elif not lobby2:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby2, lob2_b, lob2_r)
                     await self.bot.say(embed=embed)
                 elif not lobby3:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby3, lob3_b, lob3_r)
                     await self.bot.say(embed=embed)
                 elif not lobby4:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby4, lob4_b, lob4_r)
                     await self.bot.say(embed=embed)
                 else:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     await self.bot.say("All lobbies currently filled! Please wait!")
             else:
-                in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                in_queue.append(p)
             await self.bot.say("Players Queued: " + str(len(in_queue)))
         return
 
@@ -198,8 +204,8 @@ class User:
 
     # List the players in a specified lobby
     @commands.command(pass_context=True,
+                      name="stats",
                       help="Prints out the player stats. If no mention is given then it will send the stats of user who sent the command.",
-                      name='stats',
                       aliases=['mmr'])
     async def print_player(self, ctx):
         if len(ctx.message.mentions) == 1:
@@ -228,10 +234,10 @@ class User:
 
     # Print the inhouse leaderboard
     @commands.command(pass_context=True,
+                      name="rank",
                       help="Prints the top 20 players in the community.",
-                      name='leaderboard',
-                      aliases=['rank', 'ranks', 'rankings'])
-    async def leaderboard(self):
+                      aliases=['leaderboard', 'ranks', 'rankings'])
+    async def leaderboard(self, ctx):
         player_list = db.get_leaderboard(db_connection)
         embed = leaderboard_embed(player_list)
         await self.bot.say(embed=embed)

@@ -35,9 +35,9 @@ class Test:
             await self.bot.say('You are not registered yet! Use $register <your ign> to join the inhouse system!')
         else:
             if len(test_queue) >= 3:
-                if not lobby1:
+                if not lobby4:
                     test_queue.append(db.get_player(db_connection, ctx.message.author.id))
-                    embed = start_lobby_test(test_queue, lobby1, lob1_b, lob1_r)
+                    embed = start_lobby_test(test_queue, lobby4, lob4_b, lob4_r)
                     await self.bot.say(embed=embed)
                 else:
                     test_queue.append(db.get_player(db_connection, ctx.message.author.id))

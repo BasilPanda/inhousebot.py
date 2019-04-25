@@ -56,7 +56,7 @@ class Admin:
             await asyncio.sleep(3)
             await self.bot.delete_message(msg)
             return
-        if not 0 < lobby_num < 5:
+        if not 0 < int(lobby_num) < 5:
             msg = await self.bot.say("There's only 4 numbered lobbies!")
             await asyncio.sleep(3)
             await self.bot.delete_message(msg)
@@ -78,6 +78,30 @@ class Admin:
             lob4_r.clear()
         await self.bot.say("Lobby " + lobby_num + " cleared!")
         return
+
+    # Admin update elo
+    @commands.command(pass_context=True,
+                      help="Change elo for a user. ADMIN only.",
+                      name='elo')
+    async def force_elo(self, ctx):
+        if ctx.message.author.id not in config.admins:
+            await self.bot.say(ctx.message.author.mention + ", you're not an admin!")
+            return
+        try:
+            command, mention, elo = ctx.message.content.split(" ", 2)
+        except ValueError:
+            await self.bot.say("Need a mention and number argument!")
+            return
+        if len(ctx.message.mentions) == 1:
+            if db.check_user(db_connection, ctx.message.mentions[0].id):
+                p = db.get_player(db_connection, ctx.message.mentions[0].id)
+                p.elo = int(elo)
+                db.update_elo(db_connection, ctx.message.mentions[0].id, p.elo)
+                await self.bot.say("Elo updated!")
+                return
+            else:
+                await self.bot.say("User doesn't exist in database!")
+                return
 
 
 def setup(bot):

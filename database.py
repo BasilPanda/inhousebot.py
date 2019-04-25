@@ -8,8 +8,8 @@ from datetime import date
 
 cass.set_riot_api_key(config.lol_token)
 API_KEY = config.lol_token
-elo_dict = {"Unranked": 0, "Iron": 0, "Bronze": 0, "Silver": 0, "Gold": 20, "Platinum": 50, "Diamond": 100,
-            "Master": 120, "GrandMaster": 120, "Challenger": 120}
+elo_dict = {"Unranked": 0, "Iron": 0, "Bronze": 20, "Silver": 30, "Gold": 40, "Platinum": 50, "Diamond": 100,
+            "Master": 150, "GrandMaster": 175, "Challenger": 200}
 
 
 class Database:
@@ -137,7 +137,6 @@ class Database:
         c.execute('SELECT * FROM league WHERE discord_id = ?', (discord_id,))
 
         col = c.fetchone()
-        print(col)
         player = Player(col[0], col[1], col[2], col[3], col[4],
                         col[5], col[6])
         return player
