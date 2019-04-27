@@ -54,16 +54,16 @@ def lobby_embed(team1, team2):
     return embed
 
 
-def pending_lobby_embed(lobby):
-    if len(lobby) == 0:
+def players_queued(queue):
+    if len(queue) == 0:
         return 0
     t1_names = []
     t1_opgg = []
-    for p in lobby:
+    for p in queue:
         t1_names.append(p.ign + "\n")
         t1_opgg.append("".join(p.ign.split()) + "%2C")
 
-    embed = discord.Embed(title="========== LOBBY 1 ==========", colour=discord.Colour(0xffffff),
+    embed = discord.Embed(title="Players Queued: " + str(len(queue)), colour=discord.Colour(0xffffff),
                           timestamp=datetime.datetime.today())
     embed.add_field(name="Players:",
                     value=''.join(t1_names),
@@ -124,7 +124,7 @@ def leaderboard_embed(players):
         if len(str(player[4])) == 2:
             space = ""
         desc_string += str(player[2]) + " " + str(player[4]) + space + str(player[5]) + "\n"
-        if i == 20:
+        if i == 19:
             break
 
     desc_string += "\n```"
@@ -177,20 +177,27 @@ def adjust_teams(win_t, lose_t, match_id):
     lose_change = []
     win_change = []
     for p in win_t:
-        win_change.append(str(elo_change(p, lose_t_elo, 1, match_id)))
+        win_change.append(str(elo_change(p, lose_t_elo, win_t_elo, 1, match_id)))
     for p in lose_t:
-        lose_change.append(str(elo_change(p, win_t_elo, 0, match_id)))
+        lose_change.append(str(elo_change(p, win_t_elo, lose_t_elo, 0, match_id)))
     win_embed = post_embed(win_t, win_change, 1, match_id)
     lose_embed = post_embed(lose_t, lose_change, 0, match_id)
     return win_embed, lose_embed
 
 
 # This calculates elo change
-def elo_change(player, enemy_avg, score, match_id):
-    expected = 1 / (1 + 10 ** ((enemy_avg - player.elo)/120))
+def elo_change(player, enemy_avg, team_avg, score, match_id):
     # Loss
     if score == 0:
-        change = math.floor(30 * (0 - expected))
+        if player.elo > team_avg:
+            expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
+        else:
+            expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
+        streak = player.streak
+        if streak < 0:
+            change = math.floor((30 + streak) * (0 - expected))
+        else:
+            change = math.floor(30 * (0 - expected))
         player.elo = player.elo + change
         player.losses = player.losses + 1
         if player.streak >= 0:
@@ -199,7 +206,18 @@ def elo_change(player, enemy_avg, score, match_id):
             player.streak = player.streak - 1
     # Win
     else:
-        change = math.floor(30 * (1 - expected))
+        if player.elo > team_avg:
+            expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
+        else:
+            expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
+        streak = player.streak
+        if streak > 0:
+            if streak > 10:
+                change = math.floor(20 * (1 - expected)) + streak
+            else:
+                change = math.floor(30 * (1 - expected)) + streak
+        else:
+            change = math.floor(30 * (1 - expected))
         player.elo = player.elo + change
         player.wins = player.wins + 1
         if player.streak <= 0:
@@ -225,3 +243,12 @@ def check_lobbies(player):
         if player in lobby4:
             return True
     return False
+
+
+# Returns a string of players in a lobby to be mentioned
+def mention_players(lobby):
+    msg = 'Match generated alert!\n'
+    for p in lobby:
+        msg += '<@' + str(p.id) + '>'
+    return msg
+

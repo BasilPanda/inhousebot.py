@@ -1,4 +1,3 @@
-import asyncio
 from inhousebot import *
 
 
@@ -91,6 +90,64 @@ class Admin(commands.Cog):
             else:
                 await ctx.send("User doesn't exist in database!")
                 return
+
+    # Clears out entire queue
+    @commands.command(pass_context=True,
+                      help="Clears out entire queue.",
+                      name='clearq')
+    async def clear_queue(self, ctx):
+        await ctx.message.delete()
+        if ctx.message.author.id not in config.admins:
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=3)
+            return
+
+        if in_queue:
+            for i in range(len(in_queue)):
+                in_queue.pop(0)
+            await ctx.send(ctx.message.author.mention + ", the queue has been cleared!")
+        else:
+            await ctx.send(ctx.message.author.mention + ", there's no one in queue...", delete_after=3)
+        return
+
+    # Bans a player
+    @commands.command(pass_context=True,
+                      help="Bans a player.",
+                      name='ban')
+    async def ban(self, ctx):
+        await ctx.message.delete()
+        if ctx.message.author.id not in config.admins:
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=6)
+            return
+        if len(ctx.message.mentions) != 1:
+            await ctx.send(ctx.message.author.mention + ", you need to @ the user you wish to remove from "
+                                                        "queue!", delete_after=6)
+            return
+        if not db.check_ban(db_connection, ctx.message.mentions[0].id):
+            db.ban_player(db_connection, ctx.message.mentions[0].id)
+            await ctx.send(ctx.message.author.mention + ", player banned.", delete_after=12)
+        else:
+            await ctx.send(ctx.message.author.mention + ", that player is already banned.", delete_after=6)
+        return
+
+    # Unbans a player
+    @commands.command(pass_context=True,
+                      help="Unbans a player.",
+                      name='unban')
+    async def unban(self, ctx):
+        await ctx.message.delete()
+        if ctx.message.author.id not in config.admins:
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=6)
+            return
+        if len(ctx.message.mentions) != 1:
+            await ctx.send(ctx.message.author.mention + ", you need to @ the user you wish to remove from "
+                                                        "queue!", delete_after=6)
+            return
+        if db.check_ban(db_connection, ctx.message.mentions[0].id):
+            db.unban_player(db_connection, ctx.message.mentions[0].id)
+            await ctx.send(ctx.message.author.mention + ", player unbanned.", delete_after=12)
+        else:
+            await ctx.send(ctx.message.author.mention + ", that player isn't banned.", delete_after=6)
+        return
 
 
 def setup(bot):

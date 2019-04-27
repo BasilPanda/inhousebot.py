@@ -146,6 +146,9 @@ class User(commands.Cog):
                       help="Queues up for an inhouse game",
                       aliases=['join', 'letmein'])
     async def queue(self, ctx):
+        if db.check_ban(db_connection, ctx.message.author.id):
+            await ctx.send(ctx.message.author.mention + " you are currently banned from playing inhouses.", delete_after=3)
+            return
         # check if user is in queue first
         for x in in_queue:
             if x.id == ctx.message.author.id:
@@ -167,28 +170,36 @@ class User(commands.Cog):
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby1, lob1_b, lob1_r)
                     channel = self.bot.get_channel(571006477477871626)
+                    ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby1), delete_after=6)
                 elif not lobby2:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby2, lob2_b, lob2_r)
                     channel = self.bot.get_channel(571006477477871626)
+                    ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby2), delete_after=6)
                 elif not lobby3:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby3, lob3_b, lob3_r)
                     channel = self.bot.get_channel(571006477477871626)
+                    ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby3), delete_after=6)
                 elif not lobby4:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby4, lob4_b, lob4_r)
                     channel = self.bot.get_channel(571006477477871626)
+                    ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby4), delete_after=6)
                 else:
                     in_queue.append(p)
                     await ctx.send("All lobbies currently filled! Please wait!")
             else:
                 in_queue.append(p)
-            await ctx.send("Players Queued: " + str(len(in_queue)))
+            await ctx.send(embed=players_queued(in_queue))
         return
 
     # Exit the queue
@@ -234,12 +245,14 @@ class User(commands.Cog):
 
     @commands.command(pass_context=True,
                       help="Shows this help menu!")
-    async def help(self, ctx, *args: str):
+    async def help(self, ctx):
         help_msg = "```\nInhouse Bot Help Manual:\n" \
                    "Admin:\n" \
-                   "    elo       Change elo for a user.\n" \
-                   "    forceend  End the current lobby.\n" \
-                   "    remove    Remove specified player from your lobby.\n" \
+                   "    elo       Change elo for a user. $elo @user #\n" \
+                   "    forceend  End the given lobby number. $forceend #\n" \
+                   "    remove    Remove specified player from the queue. $remove @user\n" \
+                   "    clearq    Clears out the queue entirely.\n" \
+                   "    ban       Bans a player. Do $unban to unban. $ban @user.\n" \
                    "Captain:\n" \
                    "    report    Report match results. Must be a captain of a team.\n" \
                    "User:\n" \

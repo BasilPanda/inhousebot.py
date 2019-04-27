@@ -37,9 +37,43 @@ class Database:
         c.execute(''' CREATE TABLE IF NOT EXISTS league_info (match_id int non null references league_match(match_id),
         discord_id int not null references users(discord_id), elo_change int non null, primary key (discord_id, match_id))''')
 
+        c.execute(''' CREATE TABLE IF NOT EXISTS league_ban (discord_id int not null references users(discord_id) 
+        primary key, banned int)''')
         c.close()
 
         return db_connection
+
+    # This will create an entry in the ban database
+    @classmethod
+    def ban_player(cls, db_connection, discord_id):
+        # get cursor to execute SQL commands
+        c = db_connection.cursor()
+
+        # get match id
+        c.execute('INSERT INTO league_ban (discord_id, banned) VALUES (?, ?)', (discord_id, 1))
+        db_connection.commit()
+        return
+
+    # This will create an entry in the ban database
+    @classmethod
+    def check_ban(cls, db_connection, discord_id):
+        # get cursor to execute SQL commands
+        c = db_connection.cursor()
+
+        # get match id
+        c.execute('SELECT discord_id FROM league_ban WHERE discord_id = ?', (discord_id,))
+        sql_return = c.fetchone()
+
+        return sql_return
+
+    # This will remove the player from the ban database
+    @classmethod
+    def unban_player(cls, db_connection, discord_id):
+        # get cursor to execute SQL commands
+        c = db_connection.cursor()
+        c.execute('DELETE FROM league_ban WHERE discord_id = ?', (discord_id,))
+        db_connection.commit()
+        return
 
     # This will get all entries with given match ID
     @classmethod

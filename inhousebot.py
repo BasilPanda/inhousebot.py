@@ -17,7 +17,7 @@ db_connection = db.init_database()
 TOKEN = config.bot_token
 API_KEY = config.bot_token
 
-startup_extensions = ["test_cmds", "user", "admin", "captain"]
+startup_extensions = ["user", "admin", "captain"]
 
 #   CONSTANTS
 INIT_WINS = 0
