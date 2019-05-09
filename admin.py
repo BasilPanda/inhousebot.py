@@ -149,6 +149,22 @@ class Admin(commands.Cog):
             await ctx.send(ctx.message.author.mention + ", that player isn't banned.", delete_after=6)
         return
 
+    # Unbans a player
+    @commands.command(pass_context=True,
+                      help="Checks player rank.",
+                      name='check')
+    async def check_rank(self, ctx):
+        if ctx.message.author.id not in config.admins:
+            await ctx.send(ctx.message.author.mention + ", you're not an admin!", delete_after=6)
+            return
+        try:
+            command, name = ctx.message.content.split(" ", 1)
+        except ValueError:
+            await ctx.send("Need a mention argument!")
+            return
+        db.check_rank(name)
+        return
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))

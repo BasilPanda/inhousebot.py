@@ -1,15 +1,20 @@
+import math
+
 import config
 import sqlite3
 import requests
 import cassiopeia as cass
 from cassiopeia import Summoner
+
 from Player import Player
 from datetime import date
 
 cass.set_riot_api_key(config.lol_token)
 API_KEY = config.lol_token
-elo_dict = {"Unranked": 0, "Iron": 0, "Bronze": 20, "Silver": 30, "Gold": 40, "Platinum": 50, "Diamond": 100,
-            "Master": 150, "GrandMaster": 175, "Challenger": 200}
+tier_dict = {"UNRANKED": 1, "IRON": 1, "BRONZE": 1, "SILVER": 1, "GOLD": 1.5, "PLATINUM": 2, "DIAMOND": 3,
+             "MASTER": 3, "GRANDMASTER": 3, "CHALLENGER": 3}
+
+rank_dict = {"I": 75, "II": 50, "III": 25, "IV": 10, "0": 0}
 
 
 class Database:
@@ -30,7 +35,7 @@ class Database:
         # setup league table
 
         c.execute(''' CREATE TABLE IF NOT EXISTS league (last_played DATE, discord_id int not null references users(discord_id), elo int, 
-        player_ign varchar(255) primary key, wins int, losses int, streak ints) ''')
+        player_ign varchar(255) primary key, wins int, losses int, streak ints, tier varchar(30), rank varchar(6)) ''')
         # setup league match history tables
         c.execute(''' CREATE TABLE IF NOT EXISTS league_match (match_id INTEGER primary key, date_played DATE)''')
 
@@ -87,7 +92,7 @@ class Database:
         # return array containing response from previous execute command
         sql_return = c.fetchall()
 
-        #print(sql_return)
+        # print(sql_return)
         # will return the match id 
         return sql_return
 
@@ -110,7 +115,7 @@ class Database:
         # return array containing response from previous execute command
         sql_return = c.fetchone()
 
-        #print(sql_return)
+        # print(sql_return)
         # will return the match id 
         return sql_return[0]
 
@@ -121,24 +126,12 @@ class Database:
         c = db_connection.cursor()
 
         # add to match info table
-        c.execute("INSERT INTO league_info (match_id, discord_id, elo_change) VALUES (?, ?, ?)", (match_id, discord_id, elo_change))
+        c.execute("INSERT INTO league_info (match_id, discord_id, elo_change) VALUES (?, ?, ?)",
+                  (match_id, discord_id, elo_change))
 
         db_connection.commit()
 
-        return 
-
-    # This checks to see if the inputted ign is a valid League IGN
-    @classmethod
-    def validate_player(cls, player_ign):
-        r = requests.get(
-            "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + player_ign + "?api_key="
-            + config.lol_token)
-        response_json = r.json()
-        print(response_json)
-        if 'status' in response_json:
-            return False
-        else:
-            return True
+        return
 
     # This checks to see if the user is in the data_base
     @classmethod
@@ -164,6 +157,14 @@ class Database:
 
         return sql_return
 
+    # This checks to see if the inputted ign is a valid League IGN
+    @classmethod
+    def validate_player(cls, response_json):
+        if 'status' in response_json:
+            return False
+        else:
+            return True
+
     # This gets the player from the database.
     @classmethod
     def get_player(cls, db_connection, discord_id):
@@ -172,7 +173,7 @@ class Database:
 
         col = c.fetchone()
         player = Player(col[0], col[1], col[2], col[3], col[4],
-                        col[5], col[6])
+                        col[5], col[6], col[7], col[8])
         return player
 
     # This updates the database with the new player
@@ -214,12 +215,17 @@ class Database:
 
     # This gets the predetermined elo boost by using Cassiopeia API
     @classmethod
-    def determine_initial_elo(cls, name: str, region: str):
-        summoner = Summoner(name=name, region=region)
+    def determine_initial_elo(cls, tier, rank, lp):
+        bonus = 0
         try:
-            return elo_dict[str(summoner.rank_last_season)]
+            tier_multiplier = tier_dict[tier]
+            rank_addition = rank_dict[rank]
+            bonus = tier_multiplier * 100 + rank_addition
+            if lp > 100:
+                bonus = bonus + math.ceil(lp / 5)
+            return math.floor(bonus)
         except AttributeError:
-            return 0
+            return bonus
 
     # fetch the leaderboard
     @classmethod
@@ -229,3 +235,26 @@ class Database:
 
         players = c.fetchall()
         return players
+
+    # This checks current rank
+    @classmethod
+    def check_rank(cls, name):
+        r = requests.get(
+            "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + name + "?api_key="
+            + config.lol_token)
+        response_json = r.json()
+        return response_json
+
+    @classmethod
+    def get_rank(cls, response_json):
+        r = requests.get(
+            "https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + response_json['id'] + "?api_key="
+            + config.lol_token)
+        response_json = r.json()
+        print(response_json)
+        try:
+            print("Tier: " + response_json[0]['tier'])
+            print("Rank: " + response_json[0]['rank'])
+            return response_json[0]['tier'], response_json[0]['rank'], response_json[0]['leaguePoints']
+        except IndexError:
+            return "UNRANKED", '0', '0'

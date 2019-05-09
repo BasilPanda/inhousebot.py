@@ -193,11 +193,7 @@ def elo_change(player, enemy_avg, team_avg, score, match_id):
             expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
         else:
             expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
-        streak = player.streak
-        if streak < 0:
-            change = math.floor((30 + streak) * (0 - expected))
-        else:
-            change = math.floor(30 * (0 - expected))
+        change = math.floor(30 * (0 - expected))
         player.elo = player.elo + change
         player.losses = player.losses + 1
         if player.streak >= 0:
@@ -210,14 +206,7 @@ def elo_change(player, enemy_avg, team_avg, score, match_id):
             expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
         else:
             expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
-        streak = player.streak
-        if streak > 0:
-            if streak > 10:
-                change = math.floor(20 * (1 - expected)) + streak
-            else:
-                change = math.floor(30 * (1 - expected)) + streak
-        else:
-            change = math.floor(30 * (1 - expected))
+        change = math.floor(30 * (1 - expected))
         player.elo = player.elo + change
         player.wins = player.wins + 1
         if player.streak <= 0:

@@ -23,7 +23,7 @@ startup_extensions = ["user", "admin", "captain"]
 INIT_WINS = 0
 INIT_LOSS = 0
 INIT_STREAK = 0
-INIT_ELO = 1500
+INIT_ELO = 1400
 
 # four global lobbies
 lobby1 = []

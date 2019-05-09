@@ -1,6 +1,8 @@
 from datetime import date
 from lobby import *
 
+restrict = ["UNRANKED", "IRON", "BRONZE", "SILVER"]
+
 
 class User(commands.Cog):
     def __init__(self, bot):
@@ -32,21 +34,23 @@ class User(commands.Cog):
         registration_date = str(date.today())
         # get cursor to execute SQL commands
         c = db_connection.cursor()
-
+        response = db.check_rank(player_ign)
         # validate IGN
-        if db.validate_player(player_ign):
+        if db.validate_player(response):
             pass
         else:
             await ctx.send('Please provide a valid IGN ' + ctx.message.author.mention + "!")
             return
-        elo_boost = db.determine_initial_elo(player_ign, "NA")
+        tier, rank, lp = db.get_rank(response)
+        elo_boost = db.determine_initial_elo(tier, rank, lp)
         # Add user to database
         c.execute(
             "INSERT INTO users (discord_id, registration_date) VALUES (?, ?)", (user_id, registration_date))
         # Add user to league 
         c.execute(
-            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK))
+            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak, tier, rank) VALUES ("
+            "?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK, tier, rank))
 
         db_connection.commit()
         await ctx.send(ctx.message.author.mention + " you have been registered successfully!")
@@ -158,10 +162,14 @@ class User(commands.Cog):
 
         if not db.check_user(db_connection, ctx.message.author.id):
             await ctx.send(
-                ctx.message.author.mention + 'you are not registered yet! Use $register <your ign> to join the '
+                ctx.message.author.mention + ' you are not registered yet! Use $register <your ign> to join the '
                                              'inhouse system!')
         else:
             p = db.get_player(db_connection, ctx.message.author.id)
+            if p.tier in restrict:
+                await ctx.send(ctx.message.author.mention + " you must be Gold+ to enter queue!\n If your current rank "
+                                                            "has changed, you can update it with $update_rank.")
+                return
             if check_lobbies(p):
                 await ctx.send(ctx.message.author.mention + " you're already in a lobby!")
                 return
@@ -321,7 +329,7 @@ class User(commands.Cog):
             return
 
         # validate IGN
-        if db.validate_player(player_ign):
+        if db.validate_player(db.check_rank(player_ign)):
             pass
         else:
             await ctx.send('Please provide a valid IGN ' + ctx.message.author.mention + "!")
