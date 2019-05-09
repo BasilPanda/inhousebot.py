@@ -34,13 +34,15 @@ class Database:
         c.execute(''' CREATE TABLE IF NOT EXISTS users (discord_id int primary key, registration_date DATE) ''')
         # setup league table
 
-        c.execute(''' CREATE TABLE IF NOT EXISTS league (last_played DATE, discord_id int not null references users(discord_id), elo int, 
-        player_ign varchar(255) primary key, wins int, losses int, streak ints, tier varchar(30), rank varchar(6)) ''')
+        c.execute('''CREATE TABLE IF NOT EXISTS league (last_played DATE, discord_id int not null references users(
+        discord_id), elo int, player_ign varchar(255) primary key, wins int, losses int, streak ints, tier varchar(
+        30), rank varchar(6)) ''')
         # setup league match history tables
         c.execute(''' CREATE TABLE IF NOT EXISTS league_match (match_id INTEGER primary key, date_played DATE)''')
 
-        c.execute(''' CREATE TABLE IF NOT EXISTS league_info (match_id int non null references league_match(match_id),
-        discord_id int not null references users(discord_id), elo_change int non null, primary key (discord_id, match_id))''')
+        c.execute('''CREATE TABLE IF NOT EXISTS league_info (match_id int non null references league_match(match_id), 
+        discord_id int not null references users(discord_id), elo_change int non null, primary key (discord_id, 
+        match_id))''')
 
         c.execute(''' CREATE TABLE IF NOT EXISTS league_ban (discord_id int not null references users(discord_id) 
         primary key, banned int)''')

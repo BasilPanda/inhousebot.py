@@ -149,7 +149,7 @@ class Admin(commands.Cog):
             await ctx.send(ctx.message.author.mention + ", that player isn't banned.", delete_after=6)
         return
 
-    # Unbans a player
+    # Checks a players rank.
     @commands.command(pass_context=True,
                       help="Checks player rank.",
                       name='check')

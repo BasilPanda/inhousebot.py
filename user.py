@@ -43,14 +43,19 @@ class User(commands.Cog):
             return
         tier, rank, lp = db.get_rank(response)
         elo_boost = db.determine_initial_elo(tier, rank, lp)
+        if tier in restrict:
+            await ctx.send(ctx.message.author.mention + " you must be Gold+ to register!\nThe inhouse system is "
+                                                        "designed with competitive integrity in mind.")
+            return
         # Add user to database
         c.execute(
             "INSERT INTO users (discord_id, registration_date) VALUES (?, ?)", (user_id, registration_date))
         # Add user to league 
         c.execute(
-            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak, tier, rank) VALUES ("
-            "?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK, tier, rank))
+            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak, tier, rank)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK,
+             tier, rank))
 
         db_connection.commit()
         await ctx.send(ctx.message.author.mention + " you have been registered successfully!")
@@ -166,10 +171,6 @@ class User(commands.Cog):
                                              'inhouse system!')
         else:
             p = db.get_player(db_connection, ctx.message.author.id)
-            if p.tier in restrict:
-                await ctx.send(ctx.message.author.mention + " you must be Gold+ to enter queue!\n If your current rank "
-                                                            "has changed, you can update it with $update_rank.")
-                return
             if check_lobbies(p):
                 await ctx.send(ctx.message.author.mention + " you're already in a lobby!")
                 return
@@ -180,28 +181,28 @@ class User(commands.Cog):
                     channel = self.bot.get_channel(571006477477871626)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
-                    await channel.send(mention_players(lobby1), delete_after=6)
+                    await channel.send(mention_players(lobby1), delete_after=30)
                 elif not lobby2:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby2, lob2_b, lob2_r)
                     channel = self.bot.get_channel(571006477477871626)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
-                    await channel.send(mention_players(lobby2), delete_after=6)
+                    await channel.send(mention_players(lobby2), delete_after=30)
                 elif not lobby3:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby3, lob3_b, lob3_r)
                     channel = self.bot.get_channel(571006477477871626)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
-                    await channel.send(mention_players(lobby3), delete_after=6)
+                    await channel.send(mention_players(lobby3), delete_after=30)
                 elif not lobby4:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby4, lob4_b, lob4_r)
                     channel = self.bot.get_channel(571006477477871626)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
-                    await channel.send(mention_players(lobby4), delete_after=6)
+                    await channel.send(mention_players(lobby4), delete_after=30)
                 else:
                     in_queue.append(p)
                     await ctx.send("All lobbies currently filled! Please wait!")
@@ -219,7 +220,7 @@ class User(commands.Cog):
         for x in in_queue:
             if x.id == ctx.message.author.id:
                 in_queue.remove(x)
-                await ctx.send("Players Queued: " + str(len(in_queue)))
+                await ctx.send(embed=players_queued(in_queue))
                 return
         await ctx.send(ctx.message.author.mention + " you aren't in queue!")
         return
@@ -268,17 +269,17 @@ class User(commands.Cog):
                    "    match     Reports matches stored in database\n" \
                    "    opgg      Generates an op.gg link of the ign. Allows only one ign.\n" \
                    "    queue     Queues up for an inhouse game\n" \
-                   "    rank      Prints the top 20 players in the community.\n" \
+                   "    rank      Prints the top 50 players in the community.\n" \
                    "    register  Syncs your League account with our database\n" \
                    "    stats     Prints out the player stats.\n" \
-                   "    updateign Updates your ign!\n" \
+                   "    updateign Updates your ign! TEMP DISABLED FOR COMPETITIVE INTEGRITY\n" \
                    "    help      Shows this message```"
         return await ctx.send(help_msg)
 
     # Print the inhouse leaderboard
     @commands.command(pass_context=True,
                       name="rank",
-                      help="Prints the top 20 players in the community.",
+                      help="Prints the top 50 players in the community.",
                       aliases=['leaderboard', 'ranks', 'rankings'])
     async def leaderboard(self, ctx):
         player_list = db.get_leaderboard(db_connection)
@@ -310,6 +311,8 @@ class User(commands.Cog):
                       help="Updates your ign!",
                       name='updateign')
     async def update_ign(self, ctx):
+        # temp disabled
+        return
         # check that they have an account in the database
         if db.check_league(db_connection, ctx.message.author.id):
             pass

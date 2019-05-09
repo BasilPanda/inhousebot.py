@@ -22,7 +22,7 @@ def start_lobby_test(queue, lobby, team1, team2):
 
 # Puts the players onto teams
 def place_players(lobby, team1, team2):
-    for x in range(int(len(lobby)/2)):
+    for x in range(int(len(lobby) / 2)):
         team1.append(lobby[x * 2])
         team2.append(lobby[x * 2 + 1])
     return
@@ -50,24 +50,22 @@ def lobby_embed(team1, team2):
                     value=''.join(t2_names),
                     inline=True)
     embed.add_field(name="OP.GG LINKS", value="[TEAM 1 OP.GG](https://na.op.gg/multi/query=" + ''.join(t1_opgg) +
-                                              ")\n[TEAM 2 OP.GG](https://na.op.gg/multi/query=" + ''.join(t2_opgg) + ")")
+                                              ")\n[TEAM 2 OP.GG](https://na.op.gg/multi/query=" + ''.join(
+        t2_opgg) + ")")
     return embed
 
 
 def players_queued(queue):
-    if len(queue) == 0:
-        return 0
     t1_names = []
-    t1_opgg = []
     for p in queue:
         t1_names.append(p.ign + "\n")
-        t1_opgg.append("".join(p.ign.split()) + "%2C")
 
     embed = discord.Embed(title="Players Queued: " + str(len(queue)), colour=discord.Colour(0xffffff),
                           timestamp=datetime.datetime.today())
-    embed.add_field(name="Players:",
-                    value=''.join(t1_names),
-                    inline=True)
+    if t1_names:
+        embed.add_field(name="Players:",
+                        value=''.join(t1_names),
+                        inline=True)
     return embed
 
 
@@ -124,11 +122,11 @@ def leaderboard_embed(players):
         if len(str(player[4])) == 2:
             space = ""
         desc_string += str(player[2]) + " " + str(player[4]) + space + str(player[5]) + "\n"
-        if i == 19:
+        if i == 49:
             break
 
     desc_string += "\n```"
-    embed = discord.Embed(title=":trophy:     Top 20 Leaderboards     :trophy:", colour=discord.Colour(0xffcd00),
+    embed = discord.Embed(title=":trophy:     Top 50 Leaderboards     :trophy:", colour=discord.Colour(0xffcd00),
                           description=desc_string,
                           timestamp=datetime.datetime.today())
     return embed
@@ -156,6 +154,9 @@ def player_embed(p):
 
     embed.add_field(name="STREAK: ",
                     value=str(p.streak),
+                    inline=True)
+    embed.add_field(name="SOLO RANK: ",
+                    value=str(p.tier) + " " + str(p.rank),
                     inline=True)
     return embed
 
@@ -240,4 +241,3 @@ def mention_players(lobby):
     for p in lobby:
         msg += '<@' + str(p.id) + '>'
     return msg
-
