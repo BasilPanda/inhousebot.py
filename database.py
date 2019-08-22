@@ -255,8 +255,19 @@ class Database:
         response_json = r.json()
         print(response_json)
         try:
-            print("Tier: " + response_json[0]['tier'])
-            print("Rank: " + response_json[0]['rank'])
-            return response_json[0]['tier'], response_json[0]['rank'], response_json[0]['leaguePoints']
+            if response_json[0]['queueType'] == 'RANKED_SOLO_5x5':
+                print("Tier: " + response_json[0]['tier'])
+                print("Rank: " + response_json[0]['rank'])
+                return response_json[0]['tier'], response_json[0]['rank'], response_json[0]['leaguePoints']
+            elif response_json[1]['queueType'] == 'RANKED_SOLO_5x5':
+                print("Tier: " + response_json[1]['tier'])
+                print("Rank: " + response_json[1]['rank'])
+                return response_json[1]['tier'], response_json[0]['rank'], response_json[1]['leaguePoints']
+            elif response_json[2]['queueType'] == 'RANKED_SOLO_5x5':
+                print("Tier: " + response_json[2]['tier'])
+                print("Rank: " + response_json[2]['rank'])
+                return response_json[2]['tier'], response_json[0]['rank'], response_json[2]['leaguePoints']
         except IndexError:
+            print("Tier: UNRANKED")
+            print("Rank: 0")
             return "UNRANKED", '0', '0'

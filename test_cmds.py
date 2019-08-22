@@ -33,7 +33,7 @@ class Test(commands.Cog):
                 await ctx.send(ctx.message.author.mention + " you're already in queue!")
                 return
         if not db.check_user(db_connection, ctx.message.author.id):
-            await ctx.send('You are not registered yet! Use $register <your ign> to join the inhouse system!')
+            await ctx.send('You are not registered yet! Use !register <your ign> to join the inhouse system!')
         else:
             if len(test_queue) >= 3:
                 if not lobby4:

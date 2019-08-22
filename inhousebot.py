@@ -11,7 +11,7 @@ from database import Database as db
 import datetime
 
 description = '''Inhouse Bot Help Manual:'''
-client = commands.Bot(command_prefix='$', description=description)
+client = commands.Bot(command_prefix='!', description=description)
 client.remove_command('help')
 db_connection = db.init_database()
 TOKEN = config.bot_token
@@ -53,7 +53,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('\n')
-    await client.change_presence(activity=discord.Game(name='TEMPLE INHOUSES'))
+    await client.change_presence(activity=discord.Game(name='Playing Inhouses'))
     # To check current API
     r = requests.get(
         "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/Riot Phreak?api_key="

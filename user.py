@@ -27,7 +27,7 @@ class User(commands.Cog):
         except ValueError:
             await ctx.send(
                 ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
-                                             "$register Stahp Doing That")
+                                             "!register Stahp Doing That")
             return
 
         # get registration date
@@ -71,7 +71,7 @@ class User(commands.Cog):
             command, match_num = ctx.message.content.split(" ", 1)
         except ValueError:
             await ctx.send(
-                ctx.message.author.mention + ", please provide a valid match number.\nEx) $match 24")
+                ctx.message.author.mention + ", please provide a valid match number.\nEx) !match 24")
             return
 
         # get cursor to execute SQL commands
@@ -167,7 +167,7 @@ class User(commands.Cog):
 
         if not db.check_user(db_connection, ctx.message.author.id):
             await ctx.send(
-                ctx.message.author.mention + ' you are not registered yet! Use $register <your ign> to join the '
+                ctx.message.author.mention + ' you are not registered yet! Use !register <your ign> to join the '
                                              'inhouse system!')
         else:
             p = db.get_player(db_connection, ctx.message.author.id)
@@ -178,28 +178,28 @@ class User(commands.Cog):
                 if not lobby1:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby1, lob1_b, lob1_r)
-                    channel = self.bot.get_channel(571006477477871626)
+                    channel = self.bot.get_channel(613862942873485333)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
                     await channel.send(mention_players(lobby1), delete_after=30)
                 elif not lobby2:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby2, lob2_b, lob2_r)
-                    channel = self.bot.get_channel(571006477477871626)
+                    channel = self.bot.get_channel(613862942873485333)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
                     await channel.send(mention_players(lobby2), delete_after=30)
                 elif not lobby3:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby3, lob3_b, lob3_r)
-                    channel = self.bot.get_channel(571006477477871626)
+                    channel = self.bot.get_channel(613862942873485333)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
                     await channel.send(mention_players(lobby3), delete_after=30)
                 elif not lobby4:
                     in_queue.append(p)
                     embed = start_lobby_auto(lobby4, lob4_b, lob4_r)
-                    channel = self.bot.get_channel(571006477477871626)
+                    channel = self.bot.get_channel(613862942873485333)
                     ctx.send('Match generated! Check #inhouse-lol-matches!')
                     await channel.send(embed=embed)
                     await channel.send(mention_players(lobby4), delete_after=30)
@@ -257,11 +257,11 @@ class User(commands.Cog):
     async def help(self, ctx):
         help_msg = "```\nInhouse Bot Help Manual:\n" \
                    "Admin:\n" \
-                   "    elo       Change elo for a user. $elo @user #\n" \
-                   "    forceend  End the given lobby number. $forceend #\n" \
-                   "    remove    Remove specified player from the queue. $remove @user\n" \
+                   "    elo       Change elo for a user. !elo @user #\n" \
+                   "    forceend  End the given lobby number. !forceend #\n" \
+                   "    remove    Remove specified player from the queue. !remove @user\n" \
                    "    clearq    Clears out the queue entirely.\n" \
-                   "    ban       Bans a player. Do $unban to unban. $ban @user.\n" \
+                   "    ban       Bans a player. Do !unban to unban. !ban @user.\n" \
                    "Captain:\n" \
                    "    report    Report match results. Must be a captain of a team.\n" \
                    "User:\n" \
@@ -272,7 +272,7 @@ class User(commands.Cog):
                    "    rank      Prints the top 50 players in the community.\n" \
                    "    register  Syncs your League account with our database\n" \
                    "    stats     Prints out the player stats.\n" \
-                   "    updateign Updates your ign! TEMP DISABLED FOR COMPETITIVE INTEGRITY\n" \
+                   "    updateign Updates your ign!\n" \
                    "    help      Shows this message```"
         return await ctx.send(help_msg)
 
@@ -312,7 +312,6 @@ class User(commands.Cog):
                       name='updateign')
     async def update_ign(self, ctx):
         # temp disabled
-        return
         # check that they have an account in the database
         if db.check_league(db_connection, ctx.message.author.id):
             pass
@@ -328,7 +327,7 @@ class User(commands.Cog):
         except ValueError:
             await ctx.send(
                 ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
-                                             "$updateign Stahp Doing That")
+                                             "!updateign Stahp Doing That")
             return
 
         # validate IGN

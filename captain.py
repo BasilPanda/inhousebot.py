@@ -25,13 +25,13 @@ class Captain(commands.Cog):
             command, result = ctx.message.content.split(" ", 1)
         except ValueError:
             await ctx.send(ctx.message.author.mention + ', please provide a match result!\nEx) '
-                                                        '$report win or %report loss')
+                                                        '!report win or !report loss')
             return
         # Handling erroneous parameters
         if result.lower() not in lose_arr and result.lower() not in win_arr:
             await ctx.send(ctx.message.author.mention + ', please provide a correctly formatted match result!\nEx) '
-                                                        '$report win or %report loss')
-        channel = self.bot.get_channel(571006477477871626)
+                                                        '!report win or !report loss')
+        channel = self.bot.get_channel(613862942873485333)
         if lobby_num == 1:
             if lobby1:
                 win_embed, lose_embed = create_embeds(ctx, lob1_b, lob1_r, result)
