@@ -76,6 +76,7 @@ def is_captain(user_id):
                 return 1
     elif len(lobby2) > 0:
         for player in lobby2:
+
             if player.id == user_id and (lobby2.index(player) == 0 or lobby2.index(player) == 1):
                 return 2
     elif len(lobby3) > 0:

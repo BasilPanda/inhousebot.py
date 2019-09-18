@@ -14,7 +14,7 @@ API_KEY = config.lol_token
 tier_dict = {"UNRANKED": 1, "IRON": 1, "BRONZE": 1, "SILVER": 1, "GOLD": 1.5, "PLATINUM": 2, "DIAMOND": 3,
              "MASTER": 3, "GRANDMASTER": 3, "CHALLENGER": 3}
 
-rank_dict = {"I": 75, "II": 50, "III": 25, "IV": 10, "0": 0}
+rank_dict = {"I": 100, "II": 75, "III": 50, "IV": 25, "0": 0}
 
 
 class Database:
@@ -223,8 +223,8 @@ class Database:
             tier_multiplier = tier_dict[tier]
             rank_addition = rank_dict[rank]
             bonus = tier_multiplier * 100 + rank_addition
-            if lp > 100:
-                bonus = bonus + math.ceil(lp / 5)
+            if tier == "MASTER" or tier == "GRANDMASTER" or tier == "CHALLENGER":
+                bonus = bonus + math.ceil(lp / 15)
             return math.floor(bonus)
         except AttributeError:
             return bonus
@@ -262,11 +262,15 @@ class Database:
             elif response_json[1]['queueType'] == 'RANKED_SOLO_5x5':
                 print("Tier: " + response_json[1]['tier'])
                 print("Rank: " + response_json[1]['rank'])
-                return response_json[1]['tier'], response_json[0]['rank'], response_json[1]['leaguePoints']
+                return response_json[1]['tier'], response_json[1]['rank'], response_json[1]['leaguePoints']
             elif response_json[2]['queueType'] == 'RANKED_SOLO_5x5':
                 print("Tier: " + response_json[2]['tier'])
                 print("Rank: " + response_json[2]['rank'])
-                return response_json[2]['tier'], response_json[0]['rank'], response_json[2]['leaguePoints']
+                return response_json[2]['tier'], response_json[2]['rank'], response_json[2]['leaguePoints']
+            elif response_json[3]['queueType'] == 'RANKED_SOLO_5x5':
+                print("Tier: " + response_json[2]['tier'])
+                print("Rank: " + response_json[2]['rank'])
+                return response_json[3]['tier'], response_json[2]['rank'], response_json[3]['leaguePoints']
         except IndexError:
             print("Tier: UNRANKED")
             print("Rank: 0")
