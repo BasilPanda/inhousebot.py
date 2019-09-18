@@ -1,5 +1,5 @@
-import math
 
+import math
 import config
 import sqlite3
 import requests
@@ -46,9 +46,11 @@ class Database:
 
         c.execute(''' CREATE TABLE IF NOT EXISTS league_ban (discord_id int not null references users(discord_id) 
         primary key, banned int)''')
+
         c.close()
 
         return db_connection
+
 
     # This will create an entry in the ban database
     @classmethod
@@ -95,6 +97,7 @@ class Database:
         sql_return = c.fetchall()
 
         # print(sql_return)
+
         # will return the match id 
         return sql_return
 
@@ -116,8 +119,9 @@ class Database:
 
         # return array containing response from previous execute command
         sql_return = c.fetchone()
-
+       
         # print(sql_return)
+
         # will return the match id 
         return sql_return[0]
 
@@ -127,13 +131,14 @@ class Database:
         # get cursor to execute SQL commands
         c = db_connection.cursor()
 
-        # add to match info table
+        # add to match info 
         c.execute("INSERT INTO league_info (match_id, discord_id, elo_change) VALUES (?, ?, ?)",
                   (match_id, discord_id, elo_change))
 
         db_connection.commit()
 
         return
+
 
     # This checks to see if the user is in the data_base
     @classmethod
@@ -166,7 +171,6 @@ class Database:
             return False
         else:
             return True
-
     # This gets the player from the database.
     @classmethod
     def get_player(cls, db_connection, discord_id):

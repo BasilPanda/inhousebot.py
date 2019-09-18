@@ -10,7 +10,8 @@ class Player:
         self.streak = streak
         self.tier = tier
         self.rank = rank
-
+        
     def to_list(self):
         tolist = [self.date, self.id, self.elo, self.ign, self.wins, self.losses, self.streak, self.tier, self.rank]
         return tolist
+

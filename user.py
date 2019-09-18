@@ -344,7 +344,6 @@ class User(commands.Cog):
 
         c.execute(''' UPDATE league SET player_ign = ? WHERE discord_id = ?''', (player_ign, user_id))
         db_connection.commit()
-
         await ctx.send(ctx.message.author.mention + " your IGN has been successfully updated!")
         return
 

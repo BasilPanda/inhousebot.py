@@ -61,3 +61,7 @@ I will be researching the Discord API to figure out how to most efficiently hook
 
 python -m pip install discord
 
+## Other Information
+
+Most of the work done on this project was done in a private repo with two other members as a final project.
+
