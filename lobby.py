@@ -255,7 +255,6 @@ def elo_change(player, enemy_avg, team_avg, score, match_id):
     db.update_match_history(db_connection, player.id, match_id, change)
     return change
 
-
 # This checks to see if the player is in a lobby already
 def check_lobbies(player):
     if lobby1:
@@ -279,3 +278,4 @@ def mention_players(lobby):
     for p in lobby:
         msg += '<@' + str(p.id) + '>'
     return msg
+

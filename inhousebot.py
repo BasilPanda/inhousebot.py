@@ -12,7 +12,9 @@ from database import Database as db
 import asyncio
 
 description = '''Inhouse Bot Help Manual:'''
+
 client = commands.Bot(command_prefix='!', description=description)
+
 client.remove_command('help')
 db_connection = db.init_database()
 TOKEN = config.bot_token

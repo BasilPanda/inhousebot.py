@@ -3,6 +3,7 @@ from inhousebot import *
 
 # All admin related commands go here
 class Admin(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
 
