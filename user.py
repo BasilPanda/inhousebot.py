@@ -227,6 +227,71 @@ class User(commands.Cog):
 
     # List the players in a specified lobby
     @commands.command(pass_context=True,
+                      name="pick",
+                      brief="Picks a player from queue.",
+                      description="Picks a player from queue.",
+                      aliases=['choose'])
+    async def choose_player(self, ctx):
+        # Checks to see if any lobbies are running first
+        if not lobby1 and not lobby2 and not lobby3 and not lobby4:
+            await ctx.send(ctx.message.author.mention + ', there are no lobbies running!', delete_after=6)
+            return
+
+        try:
+            command, player_ign = ctx.message.content.split(" ", 1)
+        except ValueError:
+            await ctx.send(
+                ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
+                                             "!pick Stahp Doing That", delete_after=6)
+            return
+
+        lobby_num = is_captain(ctx.message.author.id)
+        # Checks to see if the user choosing is a team captain
+        if lobby_num == 0:
+            await ctx.send(ctx.message.author.mention + ', only captains can choose!', delete_after=6)
+            return
+
+        if lobby_num == 1:
+            # check to see whose turn it is.
+            if turn_flag_1 == 0:
+                if lob1_b[0].id != ctx.message.author.id:
+                    await ctx.send(ctx.message.author.mention + ' Not your turn yet!')
+                    return
+            else:
+                if lob1_r[0].id != ctx.message.author.id:
+                    await ctx.send(ctx.message.author.mention + ' Not your turn yet!')
+                    return
+
+            # checks to see if given player ign is in the lobby
+            player_flag = False
+            for x in lobby1:
+                if x.ign == player_ign:
+                    player_flag = True
+                    player = x
+            if player_flag is not True:
+                await ctx.send(ctx.message.author.mention + ', that player is not in this lobby or does not exist1', delete_after=6)
+                return
+
+            # adds player to the respective team
+            if len(lob1_b) != 5 and len(lob1_r) != 5 and len(lobby1) > 0:
+                if lob1_b[0].id == ctx.message.author.id:
+                    lob1_b.append(player)
+                    lobby1.pop(lobby1.index(player))
+                else:
+                    lob1_r.append(player)
+                    lobby1.pop(lobby1.index(player))
+                embed = players_draft_embed(lobby1, lob1_b, lob1_r)
+                if turn_flag_1 == 0:
+                    turn_flag_1 = 1
+                else:
+                    turn_flag_1 = 0
+                if len(lobby1) > 0:
+                    await ctx.send(embed=embed)
+            else:
+                await ctx.send('Teams are already full!')
+
+    # List the players in a specified lobby
+    @commands.command(pass_context=True,
                       name="stats",
                       brief="Prints out the player stats.",
                       description="Prints out the player stats. If no mention is given then it will send the stats of "
@@ -311,7 +376,6 @@ class User(commands.Cog):
                       help="Updates your ign!",
                       name='updateign')
     async def update_ign(self, ctx):
-        # temp disabled
         # check that they have an account in the database
         if db.check_league(db_connection, ctx.message.author.id):
             pass

@@ -28,6 +28,13 @@ def place_players(lobby, team1, team2):
     return
 
 
+# Choose players
+def start_draft(lobby, team1, team2):
+    for x in range(10):
+        lobby.append(in_queue.pop(0))
+    lobby.sort(key=lambda x: x.elo, reverse=True)
+
+
 # This tells the players what the teams are and what the team op.gg's
 def lobby_embed(team1, team2):
     t1_names = []
@@ -55,6 +62,7 @@ def lobby_embed(team1, team2):
     return embed
 
 
+# This generates an embed of players in queue.
 def players_queued(queue):
     t1_names = []
     for p in queue:
@@ -65,6 +73,36 @@ def players_queued(queue):
     if t1_names:
         embed.add_field(name="Players:",
                         value=''.join(t1_names),
+                        inline=True)
+    return embed
+
+
+# This generates an embed of players left in lobby draft and what players are where.
+def players_draft_embed(lobby, team1, team2):
+    t1_names = []
+    team1_names = []
+    team2_names = []
+    if lobby:
+        for p in lobby:
+            t1_names.append(p.ign + "\n")
+    for p in team1:
+        team1_names.append(p.ign + "\n")
+    for p in team2:
+        team2_names.append(p.ign + "\n")
+
+    embed = discord.Embed(title="Players left: " + str(len(lobby)), colour=discord.Colour(0xffffff),
+                          timestamp=datetime.datetime.today())
+    if t1_names:
+        embed.add_field(name="Players left to be chosen:",
+                        value=''.join(t1_names),
+                        inline=True)
+    if team1:
+        embed.add_field(name="Team 1:",
+                        value=''.join(team1_names),
+                        inline=True)
+    if team2:
+        embed.add_field(name="Team 2:",
+                        value=''.join(team2_names),
                         inline=True)
     return embed
 
@@ -195,7 +233,7 @@ def elo_change(player, enemy_avg, team_avg, score, match_id):
         else:
             expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
         change = math.floor(30 * (0 - expected))
-        player.elo = player.elo + change
+        player.elo = player.elo + change/2
         player.losses = player.losses + 1
         if player.streak >= 0:
             player.streak = -1
@@ -208,7 +246,7 @@ def elo_change(player, enemy_avg, team_avg, score, match_id):
         else:
             expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
         change = math.floor(30 * (1 - expected))
-        player.elo = player.elo + change
+        player.elo = player.elo + change*2
         player.wins = player.wins + 1
         if player.streak <= 0:
             player.streak = 1

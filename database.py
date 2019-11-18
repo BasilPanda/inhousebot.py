@@ -186,6 +186,15 @@ class Database:
                   (str(date.today()), player.elo, player.wins, player.losses, player.streak, player.id,))
         db_connection.commit()
 
+    # This updates the database with a decaying player
+    @classmethod
+    def decay_player(cls, db_connection, elo, player_id, new_date):
+        c = db_connection.cursor()
+        c.execute(
+            'UPDATE league SET last_played = ?, elo = ? WHERE discord_id = ?',
+            (str(new_date), elo, player_id,))
+        db_connection.commit()
+
     # Updates win
     @classmethod
     def update_win(cls, db_connection, user_id):
@@ -275,3 +284,15 @@ class Database:
             print("Tier: UNRANKED")
             print("Rank: 0")
             return "UNRANKED", '0', '0'
+
+    @classmethod
+    def check_decay(cls, db_connection):
+        # get cursor to execute SQL commands
+        c = db_connection.cursor()
+
+        # get match id
+        c.execute('SELECT * FROM league')
+
+        # return array containing response from previous execute command
+        sql_return = c.fetchall()
+        return sql_return
