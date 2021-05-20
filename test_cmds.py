@@ -1,7 +1,7 @@
 from lobby import *
 
 
-class Test:
+class Test(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -9,42 +9,43 @@ class Test:
     @commands.command(pass_context=True,
                       name='testdq',
                       help="Leaves the test queue",
-                      aliases=['tdq'])
+                      aliases=['tdq'],
+                      hidden=True)
     async def dequeue_test(self, ctx):
         for x in test_queue:
-            if str(x.id) == ctx.message.author.id:
+            if x.id == ctx.message.author.id:
                 test_queue.remove(x)
-                await self.bot.say("Players in Test Queue: " + str(len(test_queue)))
+                await ctx.send("Players in Test Queue: " + str(len(test_queue)))
                 return
-        await self.bot.say(ctx.message.author.mention + " you aren't in queue!")
+        await ctx.send(ctx.message.author.mention + " you aren't in queue!")
         return
 
     # Enter the queue
     @commands.command(pass_context=True,
                       name='testqueue',
                       help="Enter the test queue",
-                      aliases=['tq'])
+                      aliases=['tq'],
+                      hidden=True)
     async def queue_test(self, ctx):
         # check if user is in queue first
-        for x in in_queue:
-            if str(x.id) == ctx.message.author.id:
-                await self.bot.say(ctx.message.author.mention + " you're already in queue!")
+        for x in test_queue:
+            if x.id == ctx.message.author.id:
+                await ctx.send(ctx.message.author.mention + " you're already in queue!")
                 return
-
         if not db.check_user(db_connection, ctx.message.author.id):
-            await self.bot.say('You are not registered yet! Use $register <your ign> to join the inhouse system!')
+            await ctx.send('You are not registered yet! Use !register <your ign> to join the inhouse system!')
         else:
             if len(test_queue) >= 3:
-                if not lobby1:
+                if not lobby4:
                     test_queue.append(db.get_player(db_connection, ctx.message.author.id))
-                    embed = start_lobby_test(test_queue, lobby1, lob1_b, lob1_r)
-                    await self.bot.say(embed=embed)
+                    embed = start_lobby_test(test_queue, lobby4, lob4_b, lob4_r)
+                    await ctx.send(embed=embed)
                 else:
                     test_queue.append(db.get_player(db_connection, ctx.message.author.id))
-                    await self.bot.say("All lobbies currently filled! Please wait!")
+                    await ctx.send("All lobbies currently filled! Please wait!")
             else:
                 test_queue.append(db.get_player(db_connection, ctx.message.author.id))
-            await self.bot.say("Players in Test Queue: " + str(len(test_queue)))
+            await ctx.send("Players in Test Queue: " + str(len(test_queue)))
         return
 
 

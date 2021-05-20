@@ -1,8 +1,10 @@
 from datetime import date
 from lobby import *
 
+restrict = ["UNRANKED", "IRON", "BRONZE", "SILVER"]
 
-class User:
+
+class User(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -14,7 +16,7 @@ class User:
         # check if given IGN is already in database
         # otherwise add user to database
         if db.check_user(db_connection, ctx.message.author.id):
-            await self.bot.say('You registered already ' + ctx.message.author.mention + "!")
+            await ctx.send('You registered already ' + ctx.message.author.mention + "!")
             return
 
         # get user Discord ID
@@ -23,33 +25,40 @@ class User:
         try:
             command, player_ign = ctx.message.content.split(" ", 1)
         except ValueError:
-            await self.bot.say(
+            await ctx.send(
                 ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
-                                             "$register Stahp Doing That")
+                                             "!register Stahp Doing That")
             return
 
         # get registration date
         registration_date = str(date.today())
         # get cursor to execute SQL commands
         c = db_connection.cursor()
-
+        response = db.check_rank(player_ign)
         # validate IGN
-        if db.validate_player(player_ign):
+        if db.validate_player(response):
             pass
         else:
-            await self.bot.say('Please provide a valid IGN ' + ctx.message.author.mention + "!")
+            await ctx.send('Please provide a valid IGN ' + ctx.message.author.mention + "!")
             return
-        elo_boost = db.determine_initial_elo(player_ign, "NA")
+        tier, rank, lp = db.get_rank(response)
+        elo_boost = db.determine_initial_elo(tier, rank, lp)
+        if tier in restrict:
+            await ctx.send(ctx.message.author.mention + " you must be Gold+ to register!\nThe inhouse system is "
+                                                        "designed with competitive integrity in mind.")
+            return
         # Add user to database
         c.execute(
             "INSERT INTO users (discord_id, registration_date) VALUES (?, ?)", (user_id, registration_date))
         # Add user to league 
         c.execute(
-            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK))
+            "INSERT INTO league (player_ign, discord_id, last_played, wins, losses, elo, streak, tier, rank)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (player_ign, user_id, registration_date, INIT_WINS, INIT_LOSS, INIT_ELO + elo_boost, INIT_STREAK,
+             tier, rank))
 
         db_connection.commit()
-        await self.bot.say(ctx.message.author.mention + " you have been registered successfully!")
+        await ctx.send(ctx.message.author.mention + " you have been registered successfully!")
         return
 
     @commands.command(pass_context=True,
@@ -61,8 +70,8 @@ class User:
         try:
             command, match_num = ctx.message.content.split(" ", 1)
         except ValueError:
-            await self.bot.say(
-                ctx.message.author.mention + ", please provide a valid match number.\nEx) $match 24")
+            await ctx.send(
+                ctx.message.author.mention + ", please provide a valid match number.\nEx) !match 24")
             return
 
         # get cursor to execute SQL commands
@@ -75,7 +84,7 @@ class User:
         sql_return = c.fetchall()
 
         if not sql_return:
-            await self.bot.say("Match doesn't exist!")
+            await ctx.send("Match doesn't exist!")
             return
 
         # get match timestamp
@@ -136,9 +145,8 @@ class User:
                              inline=True)
 
         # print displays.
-        await self.bot.say(embed=win_embed)
-        await self.bot.say(embed=lose_embed)
-
+        await ctx.send(embed=win_embed)
+        await ctx.send(embed=lose_embed)
         return
 
     # Enter the queue
@@ -147,39 +155,60 @@ class User:
                       help="Queues up for an inhouse game",
                       aliases=['join', 'letmein'])
     async def queue(self, ctx):
+        if db.check_ban(db_connection, ctx.message.author.id):
+            await ctx.send(ctx.message.author.mention + " you are currently banned from playing inhouses.", delete_after=3)
+            return
         # check if user is in queue first
         for x in in_queue:
-            if str(x.id) == ctx.message.author.id:
-                await self.bot.say(ctx.message.author.mention + " you're already in queue!")
+            if x.id == ctx.message.author.id:
+                await ctx.send(ctx.message.author.mention + " you're already in queue!")
                 return
+        # Checks to see if user is in a lobby
 
         if not db.check_user(db_connection, ctx.message.author.id):
-            await self.bot.say(
-                ctx.message.author.mention + ' you are not registered yet!\nUse $register <your ign> to join the inhouse system!')
+            await ctx.send(
+                ctx.message.author.mention + ' you are not registered yet! Use !register <your ign> to join the '
+                                             'inhouse system!')
         else:
+            p = db.get_player(db_connection, ctx.message.author.id)
+            if check_lobbies(p):
+                await ctx.send(ctx.message.author.mention + " you're already in a lobby!")
+                return
             if len(in_queue) >= 9:
                 if not lobby1:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby1, lob1_b, lob1_r)
-                    await self.bot.say(embed=embed)
+                    channel = self.bot.get_channel(613862942873485333)
+                    await ctx.send('Match generated! Check #inhouse-lol-matches!')
+                    await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby1), delete_after=30)
                 elif not lobby2:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby2, lob2_b, lob2_r)
-                    await self.bot.say(embed=embed)
+                    channel = self.bot.get_channel(613862942873485333)
+                    await ctx.send('Match generated! Check #inhouse-lol-matches!')
+                    await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby2), delete_after=30)
                 elif not lobby3:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby3, lob3_b, lob3_r)
-                    await self.bot.say(embed=embed)
+                    channel = self.bot.get_channel(613862942873485333)
+                    await ctx.send('Match generated! Check #inhouse-lol-matches!')
+                    await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby3), delete_after=30)
                 elif not lobby4:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
+                    in_queue.append(p)
                     embed = start_lobby_auto(lobby4, lob4_b, lob4_r)
-                    await self.bot.say(embed=embed)
+                    channel = self.bot.get_channel(613862942873485333)
+                    await ctx.send('Match generated! Check #inhouse-lol-matches!')
+                    await channel.send(embed=embed)
+                    await channel.send(mention_players(lobby4), delete_after=30)
                 else:
-                    in_queue.append(db.get_player(db_connection, ctx.message.author.id))
-                    await self.bot.say("All lobbies currently filled! Please wait!")
+                    in_queue.append(p)
+                    await ctx.send("All lobbies currently filled! Please wait!")
             else:
-                in_queue.append(db.get_player(db_connection, ctx.message.author.id))
-            await self.bot.say("Players Queued: " + str(len(in_queue)))
+                in_queue.append(p)
+            await ctx.send(embed=players_queued(in_queue))
         return
 
     # Exit the queue
@@ -189,52 +218,138 @@ class User:
                       aliases=['leave', 'letmeout'])
     async def dequeue(self, ctx):
         for x in in_queue:
-            if str(x.id) == ctx.message.author.id:
+            if x.id == ctx.message.author.id:
                 in_queue.remove(x)
-                await self.bot.say("Players Queued: " + str(len(in_queue)))
+                await ctx.send(embed=players_queued(in_queue))
                 return
-        await self.bot.say(ctx.message.author.mention + " you aren't in queue!")
+        await ctx.send(ctx.message.author.mention + " you aren't in queue!")
         return
 
     # List the players in a specified lobby
     @commands.command(pass_context=True,
-                      help="Prints out the player stats. If no mention is given then it will send the stats of user who sent the command.",
-                      name='stats',
+                      name="pick",
+                      brief="Picks a player from queue.",
+                      description="Picks a player from queue.",
+                      aliases=['choose'])
+    async def choose_player(self, ctx):
+        # Checks to see if any lobbies are running first
+        if not lobby1 and not lobby2 and not lobby3 and not lobby4:
+            await ctx.send(ctx.message.author.mention + ', there are no lobbies running!', delete_after=6)
+            return
+
+        try:
+            command, player_ign = ctx.message.content.split(" ", 1)
+        except ValueError:
+            await ctx.send(
+                ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
+                                             "!pick Stahp Doing That", delete_after=6)
+            return
+
+        lobby_num = is_captain(ctx.message.author.id)
+        # Checks to see if the user choosing is a team captain
+        if lobby_num == 0:
+            await ctx.send(ctx.message.author.mention + ', only captains can choose!', delete_after=6)
+            return
+
+        if lobby_num == 1:
+            # check to see whose turn it is.
+            if turn_flag_1 == 0:
+                if lob1_b[0].id != ctx.message.author.id:
+                    await ctx.send(ctx.message.author.mention + ' Not your turn yet!')
+                    return
+            else:
+                if lob1_r[0].id != ctx.message.author.id:
+                    await ctx.send(ctx.message.author.mention + ' Not your turn yet!')
+                    return
+
+            # checks to see if given player ign is in the lobby
+            player_flag = False
+            for x in lobby1:
+                if x.ign == player_ign:
+                    player_flag = True
+                    player = x
+            if player_flag is not True:
+                await ctx.send(ctx.message.author.mention + ', that player is not in this lobby or does not exist1', delete_after=6)
+                return
+
+            # adds player to the respective team
+            if len(lob1_b) != 5 and len(lob1_r) != 5 and len(lobby1) > 0:
+                if lob1_b[0].id == ctx.message.author.id:
+                    lob1_b.append(player)
+                    lobby1.pop(lobby1.index(player))
+                else:
+                    lob1_r.append(player)
+                    lobby1.pop(lobby1.index(player))
+                embed = players_draft_embed(lobby1, lob1_b, lob1_r)
+                if turn_flag_1 == 0:
+                    turn_flag_1 = 1
+                else:
+                    turn_flag_1 = 0
+                if len(lobby1) > 0:
+                    await ctx.send(embed=embed)
+            else:
+                await ctx.send('Teams are already full!')
+
+    # List the players in a specified lobby
+    @commands.command(pass_context=True,
+                      name="stats",
+                      brief="Prints out the player stats.",
+                      description="Prints out the player stats. If no mention is given then it will send the stats of "
+                                  "user who sent the command.",
                       aliases=['mmr'])
     async def print_player(self, ctx):
         if len(ctx.message.mentions) == 1:
             if not db.check_user(db_connection, ctx.message.mentions[0].id):
-                await self.bot.say(ctx.message.author.mention + " the user mentioned does not exist in the system!")
+                await ctx.send(ctx.message.author.mention + " the user mentioned does not exist in the system!")
                 return
             else:
                 p = db.get_player(db_connection, ctx.message.mentions[0].id)
                 embed = player_embed(p)
-                await self.bot.say(embed=embed)
+                await ctx.send(embed=embed)
                 return
         else:
             if db.check_user(db_connection, ctx.message.author.id):
                 p = db.get_player(db_connection, ctx.message.author.id)
                 embed = player_embed(p)
-                await self.bot.say(embed=embed)
+                await ctx.send(embed=embed)
                 return
             else:
-                await self.bot.say(ctx.message.author.mention + " you're not in our system!")
+                await ctx.send(ctx.message.author.mention + " you're not in our system!")
                 return
 
     @commands.command(pass_context=True,
                       help="Shows this help menu!")
-    async def help(self, ctx, *args: str):
-        return await commands.bot._default_help_command(ctx, *args)
+    async def help(self, ctx):
+        help_msg = "```\nInhouse Bot Help Manual:\n" \
+                   "Admin:\n" \
+                   "    elo       Change elo for a user. !elo @user 5\n" \
+                   "    forceend  End the given lobby number. !forceend 1\n" \
+                   "    remove    Remove specified player from the queue. !remove @user\n" \
+                   "    clearq    Clears out the queue entirely. !clearq\n" \
+                   "    ban       Bans a player. Do !unban to unban. !ban @user.\n" \
+                   "Captain:\n" \
+                   "    report    Report match results. Must be a captain of a team. !report w/l\n" \
+                   "User:\n" \
+                   "    dequeue   Leaves the inhouse queue. !dequeue\n" \
+                   "    match     Reports matches stored in database. !match #\n" \
+                   "    opgg      Generates an op.gg link of the ign. Allows only one ign. !opgg Omnix\n" \
+                   "    queue     Queues up for an inhouse game. !queue\n" \
+                   "    rank      Prints the top 50 players in the community. !rank/!ranks\n" \
+                   "    register  Syncs your League account with our database. !register Omnix\n" \
+                   "    stats     Prints out the player stats. !stats @user\n" \
+                   "    updateign Updates your ign! !updateign Omnix\n" \
+                   "    help      Shows this message !help```"
+        return await ctx.send(help_msg)
 
     # Print the inhouse leaderboard
     @commands.command(pass_context=True,
-                      help="Prints the top 20 players in the community.",
-                      name='leaderboard',
-                      aliases=['rank', 'ranks', 'rankings'])
-    async def leaderboard(self):
+                      name="rank",
+                      help="Prints the top 50 players in the community.",
+                      aliases=['leaderboard', 'ranks', 'rankings'])
+    async def leaderboard(self, ctx):
         player_list = db.get_leaderboard(db_connection)
         embed = leaderboard_embed(player_list)
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
         return
 
     # Print the inhouse leaderboard
@@ -245,7 +360,7 @@ class User:
         try:
             command, player_ign = ctx.message.content.split(" ", 1)
         except ValueError:
-            await self.bot.say(ctx.message.author.mention + " need an ign!")
+            await ctx.send(ctx.message.author.mention + " need an ign!")
             return
         name_list = player_ign.split()
         temp = ""
@@ -254,7 +369,7 @@ class User:
         embed = discord.Embed(title="OP.GG LINK GENERATOR", colour=discord.Colour(0xffffff),
                               description="[CLICK ON ME FOR OP.GG!](https://na.op.gg/summoner/userName=" + temp + ")",
                               timestamp=datetime.datetime.today())
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
     # update league name
     @commands.command(pass_context=True,
@@ -265,7 +380,7 @@ class User:
         if db.check_league(db_connection, ctx.message.author.id):
             pass
         else:
-            await self.bot.say('You must register your account ' + ctx.message.author.mention + "!")
+            await ctx.send('You must register your account ' + ctx.message.author.mention + "!")
             return
 
         # get user Discord ID
@@ -274,16 +389,16 @@ class User:
         try:
             command, player_ign = ctx.message.content.split(" ", 1)
         except ValueError:
-            await self.bot.say(
+            await ctx.send(
                 ctx.message.author.mention + ", please provide a valid League IGN after the command.\nEx) "
-                                             "$updateign Stahp Doing That")
+                                             "!updateign Stahp Doing That")
             return
 
         # validate IGN
-        if db.validate_player(player_ign):
+        if db.validate_player(db.check_rank(player_ign)):
             pass
         else:
-            await self.bot.say('Please provide a valid IGN ' + ctx.message.author.mention + "!")
+            await ctx.send('Please provide a valid IGN ' + ctx.message.author.mention + "!")
             return
 
         # update IGN
@@ -293,8 +408,7 @@ class User:
 
         c.execute(''' UPDATE league SET player_ign = ? WHERE discord_id = ?''', (player_ign, user_id))
         db_connection.commit()
-
-        await self.bot.say(ctx.message.author.mention + " your IGN has been successfully updated!")
+        await ctx.send(ctx.message.author.mention + " your IGN has been successfully updated!")
         return
 
 
