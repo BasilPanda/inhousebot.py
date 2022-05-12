@@ -5,13 +5,14 @@ LobbyManager.py manages lobbies created from the Lobby class
 import math
 from collections import deque
 from datetime import datetime
+from typing import List
 
 # External Imports
 import discord
 
 # Local Imports
 import Lobby
-# from Player import Player
+import Player
 from inhousebot.database import Database as db # pylint: disable=import-error
 from inhousebot.inhousebot import log, db_connection # pylint: disable=import-error
 
@@ -89,24 +90,62 @@ class LobbyManager:
         return embed
 
     @staticmethod
-    def pending_lobby_embed(lobby):
+    def players_queued(in_queue: deque):
         """
-        Might be obsolete.
+        This generates an embed of players in queue.
         """
-        if len(lobby) == 0:
-            return 0
         t1_names = []
-        t1_opgg = []
-        for p in lobby:
+        for p in in_queue:
             t1_names.append(p.ign + "\n")
-            t1_opgg.append("".join(p.ign.split()) + "%2C")
 
-        embed = discord.Embed(title="========== LOBBY ==========", colour=discord.Colour(0xffffff),
-                            timestamp=datetime.datetime.today())
-        embed.add_field(name="Players:",
-                        value=''.join(t1_names),
-                        inline=True)
+        embed = discord.Embed(
+            title=f"Players Queued: {len(in_queue)}",
+            colour=discord.Colour(0xffffff),
+            timestamp=datetime.datetime.today())
+        if t1_names:
+            embed.add_field(
+                name="Players:",
+                value=''.join(t1_names),
+                inline=True)
         return embed
+
+    @staticmethod
+    def players_draft_embed(lobby: Lobby):
+        """
+        This generates an embed of players left in lobby draft and what players are where.
+        """
+        t1_names = []
+        team1_names = []
+        team2_names = []
+        if lobby:
+            for p in lobby:
+                t1_names.append(p.ign + "\n")
+        for p in lobby.leftSide:
+            team1_names.append(p.ign + "\n")
+        for p in lobby.rightSide:
+            team2_names.append(p.ign + "\n")
+
+        embed = discord.Embed(
+            title=f"Players left: {len(lobby)}",
+            colour=discord.Colour(0xffffff),
+            timestamp=datetime.datetime.today())
+        if t1_names:
+            embed.add_field(
+                name="Players left to be chosen:",
+                value=''.join(t1_names),
+                inline=True)
+        if lobby.leftSide:
+            embed.add_field(
+                name="Team 1:",
+                value=''.join(team1_names),
+                inline=True)
+        if lobby.rightSide:
+            embed.add_field(
+                name="Team 2:",
+                value=''.join(team2_names),
+                inline=True)
+        return embed
+
 
     @staticmethod
     def post_embed(team, change, score, match_id):
@@ -124,25 +163,31 @@ class LobbyManager:
             for x in change:
                 elo.append(str(x) + "\n")
         if score:
-            embed = discord.Embed(title="__Match " + str(match_id) + " Results:__",
-                                colour=discord.Colour(0x20ea65),
-                                timestamp=datetime.datetime.today())
-            embed.add_field(name="Winning Team",
-                            value=''.join(t_names),
-                            inline=True)
-            embed.add_field(name="ELO GAINED",
-                            value=''.join(elo),
-                            inline=True)
+            embed = discord.Embed(
+                title="__Match " + str(match_id) + " Results:__",
+                colour=discord.Colour(0x20ea65),
+                timestamp=datetime.datetime.today())
+            embed.add_field(
+                name="Winning Team",
+                value=''.join(t_names),
+                inline=True)
+            embed.add_field(
+                name="ELO GAINED",
+                value=''.join(elo),
+                inline=True)
         else:
-            embed = discord.Embed(title="__Match " + str(match_id) + " Results:__",
-                                colour=discord.Colour(0xff0000),
-                                timestamp=datetime.datetime.today())
-            embed.add_field(name="Losing Team",
-                            value=''.join(t_names),
-                            inline=True)
-            embed.add_field(name="ELO LOST",
-                            value=''.join(elo),
-                            inline=True)
+            embed = discord.Embed(
+                title=f"__Match {match_id} Results:__",
+                colour=discord.Colour(0xff0000),
+                timestamp=datetime.datetime.today())
+            embed.add_field(
+                name="Losing Team",
+                value=''.join(t_names),
+                inline=True)
+            embed.add_field(
+                name="ELO LOST",
+                value=''.join(elo),
+                inline=True)
         return embed
 
     @staticmethod
@@ -159,16 +204,21 @@ class LobbyManager:
         for i in range(len(charts)):
             player = charts.pop()
             desc_string += str(i + 1) + ". " + str(player[3])
-            for j in range(0, 20 - len(str(player[3]))):
+            if i > 8:
+                x = 1
+            for j in range(0, 20 - x - len(str(player[3]))):
                 del j
                 desc_string += " "
-            desc_string += str(player[2]) + " " + str(player[4]) + "  " + str(player[5]) + "\n"
-            if i == 20:
+            space = " "
+            if len(str(player[4])) == 2:
+                space = ""
+            desc_string += str(player[2]) + " " + str(player[4]) + space + str(player[5]) + "\n"
+            if i == 49:
                 break
 
         desc_string += "\n```"
         embed = discord.Embed(
-            title=":trophy:     Top 20 Leaderboards     :trophy:",
+            title=":trophy:     Top 50 Leaderboards     :trophy:", 
             colour=discord.Colour(0xffcd00),
             description=desc_string,
             timestamp=datetime.datetime.today())
@@ -224,24 +274,26 @@ class LobbyManager:
         lose_change = []
         win_change = []
         for p in win_t:
-            win_change.append(str(LobbyManager.elo_change(p, lose_t_elo, 1, match_id)))
+            win_change.append(str(LobbyManager.elo_change(p, lose_t_elo, win_t_elo, 1, match_id)))
         for p in lose_t:
-            lose_change.append(str(LobbyManager.elo_change(p, win_t_elo, 0, match_id)))
+            lose_change.append(str(LobbyManager.elo_change(p, win_t_elo, lose_t_elo, 0, match_id)))
         win_embed = LobbyManager.post_embed(win_t, win_change, 1, match_id)
         lose_embed = LobbyManager.post_embed(lose_t, lose_change, 0, match_id)
         return win_embed, lose_embed
 
     @staticmethod
-    def elo_change(player, enemy_avg, score, match_id):
+    def elo_change(player, enemy_avg, team_avg, score, match_id):
         """
         Calculates elo change
         """
-        expected = 1 / (1 + 10 ** ((enemy_avg - player.elo)/140))
-        change = 0
         # Loss
         if score == 0:
+            if player.elo > team_avg:
+                expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
+            else:
+                expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
             change = math.floor(30 * (0 - expected))
-            player.elo = player.elo + change
+            player.elo = player.elo + change/2
             player.losses = player.losses + 1
             if player.streak >= 0:
                 player.streak = -1
@@ -249,8 +301,12 @@ class LobbyManager:
                 player.streak = player.streak - 1
         # Win
         else:
+            if player.elo > team_avg:
+                expected = 1 / (1 + 10 ** ((enemy_avg - team_avg) / 120))
+            else:
+                expected = 1 / (1 + 10 ** ((enemy_avg - player.elo) / 120))
             change = math.floor(30 * (1 - expected))
-            player.elo = player.elo + change
+            player.elo = player.elo + change*2
             player.wins = player.wins + 1
             if player.streak <= 0:
                 player.streak = 1
@@ -258,4 +314,14 @@ class LobbyManager:
                 player.streak = player.streak + 1
         db.update_match_history(db_connection, player.id, match_id, change)
         return change
-        
+
+    @staticmethod
+    def in_lobby(player: Player, lobbies: List):
+        """
+        Gets the lobby a player is in. Returns None if not in any lobby.
+        """
+        for lobby in lobbies:
+            for p in lobby:
+                if player.id == p.id:
+                    return lobby
+        return None
