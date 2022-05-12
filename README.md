@@ -28,9 +28,13 @@ Here are the goals and milestones listed:
 
 ## Required Dependencies
 
-
-python -m pip install discord
+python -m pip install -r requirements.txt
 
 ## Other Information
 
 Most of the work done on this project was done in a private repo with two other members as a final project.
+
+## How to use
+
+Get a key from Riot's Developer Portal for bot @ https://developer.riotgames.com/ 
+Put key in a config.py file named
